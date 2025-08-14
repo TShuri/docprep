@@ -1,7 +1,7 @@
 import shutil
 import zipfile
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 
 def unzip_archive(archive_path: str | Path, extract_to: Optional[str | Path] = None) -> Path:
@@ -203,9 +203,79 @@ def ensure_folder(path: str | Path) -> Path:
     return p
 
 
+def find_dossier_archive(folder: str | Path) -> Path:
+    """
+    Ищет архив, название которого начинается с 'Досье по банкротству'
+    только в указанной папке. Архив должен быть только один.
+
+    :param folder: Папка для поиска
+    :return: Путь к найденному архиву
+    :raises FileNotFoundError: если архив не найден
+    :raises ValueError: если найдено несколько архивов
+    """
+    folder = Path(folder)
+    if not folder.exists() or not folder.is_dir():
+        raise NotADirectoryError(f'Папка {folder} не существует')
+
+    pattern = 'Досье по банкротству*.zip'
+    files = list(folder.glob(pattern))  # только текущая папка
+
+    if not files:
+        raise FileNotFoundError("Архив 'Досье по банкротству' не найден")
+    if len(files) > 1:
+        raise ValueError(f'Найдено несколько архивов: {[str(f) for f in files]}')
+
+    return files[0]
+
+
+def find_rtk_doc(folder: str | Path) -> Path:
+    """
+    Ищет **один** docx-файл, название которого начинается с
+    'Заявление на включение в требований в РТК' только в указанной папке.
+
+    :param folder: Папка для поиска
+    :return: Путь к найденному docx-файлу
+    :raises FileNotFoundError: если файл не найден
+    :raises ValueError: если найдено несколько файлов
+    """
+    folder = Path(folder)
+    if not folder.exists() or not folder.is_dir():
+        raise NotADirectoryError(f'Папка {folder} не существует')
+
+    pattern = 'Заявление на включение требований*.docx'
+    files = list(folder.glob(pattern))  # только текущая папка
+
+    if not files:
+        raise FileNotFoundError("Документ 'Заявление на включение в требований' не найден")
+    if len(files) > 1:
+        raise ValueError(f'Найдено несколько документов: {[str(f) for f in files]}')
+
+    return files[0]
+
+
+def find_folders_obligations(folder: str | Path) -> List[Path]:
+    """
+    Возвращает все папки в указанной директории, за исключением папки
+    'Документы по банкротству'.
+
+    :param folder: Папка для поиска
+    :return: Список путей к найденным папкам
+    """
+    folder = Path(folder)
+    if not folder.exists() or not folder.is_dir():
+        raise NotADirectoryError(f'Папка {folder} не существует')
+
+    return [
+        subfolder
+        for subfolder in folder.iterdir()
+        if subfolder.is_dir() and subfolder.name != 'Документы о банкротстве'
+    ]
+
+
 # if __name__ == '__main__':
 #     # Пример использования
 #     try:
-#         ensure_folder('test_folder')
+#         path = find_dossier_archive('C:\Projects\sber\programs\docprep')
+#         print(f'Найден архив: {path}')
 #     except Exception as e:
 #         print(f'Ошибка: {e}')
