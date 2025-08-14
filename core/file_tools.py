@@ -203,9 +203,9 @@ def ensure_folder(path: str | Path) -> Path:
     return p
 
 
-if __name__ == '__main__':
-    # Пример использования
-    try:
-        ensure_folder('test_folder')
-    except Exception as e:
-        print(f'Ошибка: {e}')
+# if __name__ == '__main__':
+#     # Пример использования
+#     try:
+#         ensure_folder('test_folder')
+#     except Exception as e:
+#         print(f'Ошибка: {e}')
