@@ -13,21 +13,21 @@ class SettingsController:
         self.on_work_dir_changed = on_work_dir_changed
 
         # Подписка на сигналы View
-        self.view.save_clicked.connect(self.save_work_directory)
-        self.view.browse_clicked.connect(self.browse_folder)
+        self.view.save_clicked.connect(self.handle_save_clicked)
+        self.view.browse_clicked.connect(self.handle_browse_clicked)
 
         # Инициализация рабочего пути
         folder_path = load_work_directory()
         if folder_path:
             self.view.set_work_dir(folder_path)
 
-    def browse_folder(self):
+    def handle_browse_clicked(self):
         folder = QFileDialog.getExistingDirectory(self.view, "Выберите рабочую папку")
         if folder:
             self.view.set_work_dir(folder)
             self.save_work_directory()  # Автосохранение после выбора
 
-    def save_work_directory(self):
+    def handle_save_clicked(self):
         folder_path = self.view.get_work_dir()
         if folder_path:
             save_work_directory(folder_path)
