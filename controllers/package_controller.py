@@ -1,26 +1,27 @@
 from pathlib import Path
 
 from core import docx_tools, file_tools
-from utils.settings_utils import load_work_directory, save_work_directory
+from utils.settings_utils import load_work_directory
 from utils.text_utils import sanitize_filename
 
 
-class DocPrepController:
-    def __init__(self):
-        pass
+class PackageController:
+    def __init__(self, view):
+        self.view = view
+        self.view.process_clicked.connect(self.on_procces)
 
-    def load_work_directory(self) -> str | None:
-        """
-        Загружает путь к рабочей папке из настроек.
-        :return: Путь к рабочей папке или None, если не задано.
-        """
-        return load_work_directory()
+    def on_procces(self):
+        self.view.reset()
+        folder_path = load_work_directory()
+        if not folder_path:
+            self.view.append_log("Пожалуйста, укажите путь к рабочей папке.")
+            return
 
-    def package_formation(self, folder_path: str) -> list[str]:
-        """
-        Главная функция обработки рабочей папки.
-        Возвращает список статусов (логов), которые потом можно показывать в GUI.
-        """
+        logs = self._package_formation(folder_path)
+        for log in logs:
+            self.view.append_log(log)
+
+    def _package_formation(self, folder_path: str) -> list[str]:
         try:
             logs = []
 
@@ -28,8 +29,6 @@ class DocPrepController:
             if not folder.exists() or not folder.is_dir():
                 logs.append('Указанная папка не существует.')
                 return logs
-
-            save_work_directory(str(folder))  # Сохраняем рабочую директорию
 
             path_rtk_doc = file_tools.find_rtk_doc(folder)  # Путь к документу РТК
             fio_debtor = docx_tools.extract_fio_debtor(path_rtk_doc)  # Извлечение ФИО должника
@@ -67,6 +66,7 @@ class DocPrepController:
                     dst=path_arbitter_folder,
                 )
 
+            self.view.set_current_case(f'{case_number} {fio_debtor}')
             logs.append('Пакет документов сформирован.')
 
             return logs
