@@ -113,14 +113,15 @@ def format_appendices(docx_path: Path) -> None:
     doc.save(docx_path)
     
     
-def insert_bank_table(statement_path: str, bank_name: str):
+def insert_bank_table(statement_path: str, path_banks_file: str, bank_name: str):
     """
     Вставляет таблицу с реквизитами нужного банка в заявление.
 
-    :param statement_path: Путь к шаблону заявления
+    :param statement_path: Путь к заявлению
+    :param path_banks_file: Путь к файлу с реквизитами банков
     :param bank_name: Название банка, чьи реквизиты нужно вставить
     """
-    BANK_REQUISITES_FILE = Path('settings/bank_requisites.docx')
+    BANK_REQUISITES_FILE = Path(path_banks_file)
     stmt_doc = Document(statement_path)
     bank_doc = Document(BANK_REQUISITES_FILE)
 
@@ -176,8 +177,9 @@ def insert_bank_table(statement_path: str, bank_name: str):
     stmt_doc.save(statement_path)
     
     
-def get_bank_list() -> list[str]:
-    BANK_FILE = Path('settings/bank_requisites.docx')
+def get_bank_list(path_banks_file: str) -> list[str]:
+    # BANK_FILE = Path('settings/bank_requisites.docx')
+    BANK_FILE = Path(path_banks_file)
     doc = Document(BANK_FILE)
     banks = []
 

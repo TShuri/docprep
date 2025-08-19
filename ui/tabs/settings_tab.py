@@ -13,9 +13,13 @@ from PyQt6.QtWidgets import (
 
 
 class SettingsTab(QWidget):
-    # Сигналы, которые контроллер слушает
+    # Кнопки для пунктов выбора рабочей директории и сохранения
     save_clicked = pyqtSignal()
     browse_clicked = pyqtSignal()
+    
+    select_bank_clicked = pyqtSignal()
+    
+    aplly_settings_clicked = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -45,8 +49,26 @@ class SettingsTab(QWidget):
 
         group1.setLayout(grid1)
         main_layout.addWidget(group1)
+        
+        # === Группа "Банковские реквизиты" ===
+        group2 = QGroupBox("Банковские реквизиты")
+        grid2 = QGridLayout()
 
-        # Спейсер, чтобы прижать группу к верху
+        self.btn_select_bank = QPushButton("Обзор")
+        self.btn_select_bank.clicked.connect(lambda: self.select_bank_clicked.emit())
+        
+        grid2.addWidget(self.btn_select_bank, 0, 1)
+        
+        group2.setLayout(grid2)
+        main_layout.addWidget(group2)
+        
+        # == Кнопка "Применить настройки" ==
+        self.btn_apply = QPushButton("Применить настройки")
+        self.btn_apply.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.btn_apply.clicked.connect(lambda: self.aplly_settings_clicked.emit())
+        main_layout.addWidget(self.btn_apply)
+
+        # == Спейсер, чтобы прижать группу к верху ==
         main_layout.addItem(
             QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
         )

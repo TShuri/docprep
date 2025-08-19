@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from core import docx_tools, file_tools
-from utils.settings_utils import load_work_directory
+from utils.settings_utils import load_bank_requisites_directory, load_work_directory
 from utils.text_utils import sanitize_filename
 
 
@@ -12,12 +12,18 @@ class PackageController:
         self.view.reset_clicked.connect(self.handle_reset_clicked)
 
         self.current_path_rtk = None  # Путь к документу РТК
+        self.have_bank_requisites = False  # Флаг наличия реквизитов банков
         self.update_bank_requisites()
         
         
     def update_bank_requisites(self):
-        banks = docx_tools.get_bank_list()
-        self.view.set_bank_list(banks)
+        path_banks_file = load_bank_requisites_directory()
+        if not path_banks_file:
+            self.view.append_log("Файл с реквизитами банков не найден.")
+        else:
+            self.have_bank_requisites = True
+            banks = docx_tools.get_bank_list(path_banks_file)
+            self.view.set_bank_list(banks)
         
         
     def handle_reset_clicked(self):
@@ -93,4 +99,7 @@ class PackageController:
         # 1️⃣ Форматирование списка приложений
         docx_tools.format_appendices(path_statement)
         # 2️⃣ Вставка реквизитов банка в таблицу
-        docx_tools.insert_bank_table(path_statement, self.view.bank_selector.currentText())
+        if self.have_bank_requisites is True:
+            docx_tools.insert_bank_table(path_statement, load_bank_requisites_directory(), self.view.bank_selector.currentText())
+        else:
+            self.view.append_log("Банковские реквизиты не заменены")
