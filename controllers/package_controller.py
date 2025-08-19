@@ -10,31 +10,39 @@ class PackageController:
         self.view = view
         self.view.process_clicked.connect(self.handle_process_clicked)
         self.view.reset_clicked.connect(self.handle_reset_clicked)
+        self.view.checkbox_statement.stateChanged.connect(self.handle_checkbox_toggled)
 
-        self.current_path_rtk = None  # Путь к документу РТК
+        self.current_path_doc = None  # Путь к документу РТК
         self.have_bank_requisites = False  # Флаг наличия реквизитов банков
         self.update_bank_requisites()
         
         
     def update_bank_requisites(self):
-        path_banks_file = load_bank_requisites_directory()
-        if not path_banks_file:
+        path_requirities = load_bank_requisites_directory()
+        if not path_requirities:
             self.view.append_log("Файл с реквизитами банков не найден.")
         else:
             self.have_bank_requisites = True
-            banks = docx_tools.get_bank_list(path_banks_file)
+            doc_requirities = docx_tools.open_docx(path_requirities)
+            banks = docx_tools.get_bank_list(doc_requirities)
             self.view.set_bank_list(banks)
-        
+            
+    def handle_checkbox_toggled(self, state):
+        # Если чекбокс включён, делаем группы неактивными
+        enabled = state == 0  # 0 = unchecked, 2 = checked
+        self.view.group1.setEnabled(enabled)
+        self.view.group2.setEnabled(enabled)
+        self.view.group3.setEnabled(enabled)
         
     def handle_reset_clicked(self):
         self.view.reset_bank()
         self.view.reset()
-        self.current_path_rtk = None
+        self.current_path_doc = None
         
         
     def handle_process_clicked(self):
         self.view.reset()
-        self.current_path_rtk = None
+        self.current_path_doc = None
         folder_path = load_work_directory()
         
         if not folder_path:
@@ -47,11 +55,11 @@ class PackageController:
 
         self._form_package(folder_path) # Формирование пакета документов
         
-        if not self.current_path_rtk:
+        if not self.current_path_doc:
             self.view.append_log("Не удалось найти документ РТК в указанной папке.")
             return
         
-        self._proccess_statement(self.current_path_rtk)  # Обработка заявления на включение требований в реестр
+        self._proccess_statement(self.current_path_doc)  # Обработка заявления на включение требований в реестр
         
         
     def _form_package(self, folder_path: str) -> list[str]:
@@ -63,31 +71,32 @@ class PackageController:
             
         try:
             # 1️⃣ Найти документ РТК и извлечь данные должника
-            path_rtk_doc = file_tools.find_rtk_doc(folder)  # Путь к документу РТК
-            fio_debtor = docx_tools.extract_fio_debtor(path_rtk_doc)  # Извлечение ФИО должника
-            case_number = docx_tools.extract_case_number(path_rtk_doc)  # Извлечение номера дела
+            path_doc = file_tools.find_rtk_doc(folder)  # Путь к документу РТК
+            doc = docx_tools.open_docx(path_doc)  # Открытие документа РТК
+            fio_debtor = docx_tools.extract_fio_debtor(doc)  # Извлечение ФИО должника
+            case_number = docx_tools.extract_case_number(doc)  # Извлечение номера дела
 
             # 2️⃣ Разархивировать досье
-            path_dossier_archive = file_tools.find_dossier_archive(folder)  # Путь к архиву досье
-            path_extract_dossier_archive = folder / fio_debtor  # Папка для распаковки архива досье
-            path_dossier = file_tools.unzip_archive(path_dossier_archive, path_extract_dossier_archive)  # Распаковка архива досье
+            path_archive = file_tools.find_dossier_archive(folder)  # Путь к архиву досье
+            path_extract = folder / fio_debtor  # Папка для распаковки архива досье
+            path_dossier = file_tools.unzip_archive(path_archive, path_extract)  # Распаковка архива досье
             file_tools.unzip_all_nested_archives(path_dossier)  # Распаковка вложенных архивов в досье
-            file_tools.delete_file(path_dossier_archive)  # Удаление архива досье после распаковки
+            file_tools.delete_file(path_archive)  # Удаление архива досье после распаковки
 
             # 3️⃣ Переместить документ РТК в папку досье
-            self.current_path_rtk = file_tools.move_file(path_rtk_doc, path_dossier)
+            self.current_path_doc = file_tools.move_file(path_doc, path_dossier)
 
             # 4️⃣ Создать папку арбитражного дела
-            arbitter_folder = path_dossier / f'{sanitize_filename(case_number)} {fio_debtor}'
-            path_arbitter_folder = file_tools.ensure_folder(arbitter_folder)
+            name_arbitter = path_dossier / f'{sanitize_filename(case_number)} {fio_debtor}'
+            path_arbitter = file_tools.ensure_folder(name_arbitter)
 
             # 5️⃣ Скопировать папки обязательств в папку арбитражного дела
             # Исключая папку арбитражного дела, если она уже существует
             paths_obligations = file_tools.find_folders_obligations(path_dossier)  # Поиск папок обязательств
-            for path_obligation in paths_obligations:
-                if path_obligation == path_arbitter_folder:
+            for path_oblig in paths_obligations:
+                if path_oblig == path_arbitter:
                     continue
-                file_tools.copy_folder(path_obligation, path_arbitter_folder)
+                file_tools.copy_folder(path_oblig, path_arbitter)
 
             self.view.set_current_case(f'{case_number} {fio_debtor}')
             self.view.append_log('Пакет документов сформирован.')
@@ -95,11 +104,26 @@ class PackageController:
         except Exception as e:
             self.view.append_log(f'Произошла ошибка: {e}')
             
-    def _proccess_statement(self, path_statement: Path) -> None:
+    def _proccess_statement(self, path_doc: Path) -> None:
+        doc = docx_tools.open_docx(path_doc)
+
+        def _step(step_name: str, func: callable, *args):
+            try:
+                func(*args)
+                doc.save(path_doc)
+            except Exception as e:
+                self.view.append_log(f"{step_name}: ошибка — {e}")
+
         # 1️⃣ Форматирование списка приложений
-        docx_tools.format_appendices(path_statement)
+        _step('Форматирование приложений', docx_tools.format_appendices, doc)
+
         # 2️⃣ Вставка реквизитов банка в таблицу
-        if self.have_bank_requisites is True:
-            docx_tools.insert_bank_table(path_statement, load_bank_requisites_directory(), self.view.bank_selector.currentText())
+        if self.have_bank_requisites:
+            path_requisites = load_bank_requisites_directory()
+            doc_requisities = docx_tools.open_docx(path_requisites)
+            _step('Вставка реквизитов банка',
+                    docx_tools.insert_bank_table,
+                    doc, doc_requisities, self.view.bank_selector.currentText()
+                )
         else:
             self.view.append_log("Банковские реквизиты не заменены")

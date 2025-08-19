@@ -8,7 +8,7 @@ from docx.oxml.ns import qn
 from docx.table import Table
 
 
-def _open_docx(path: str | Path) -> Document:
+def open_docx(path: str | Path) -> Document:
     """
     Открывает существующий документ Word.
     :param path: Путь к файлу docx
@@ -34,11 +34,10 @@ def _extract_after_label(doc: Document, label: str) -> Optional[str]:
     return None
 
 
-def extract_fio_debtor(docx_path: Path) -> Optional[str]:
+def extract_fio_debtor(doc: Document) -> Optional[str]:
     """
     Извлечение ФИО должника. Метка: 'Должник:'
     """
-    doc = _open_docx(docx_path)
     return _extract_after_label(doc, 'Должник:')
 
 
@@ -50,11 +49,10 @@ def extract_fio_debtor(docx_path: Path) -> Optional[str]:
 #     return _extract_after_label(doc, 'Финансовый управляющий:')
 
 
-def extract_case_number(docx_path: Path) -> Optional[str]:
+def extract_case_number(doc: Document) -> Optional[str]:
     """
     Извлечение номера дела. Формат: Дело № A33-12345/2024
     """
-    doc = _open_docx(docx_path)
     pattern = r'Дело\s+№\s*([AА]\d{2}-\d+/\d{4})'
 
     for para in doc.paragraphs:
@@ -65,12 +63,11 @@ def extract_case_number(docx_path: Path) -> Optional[str]:
     return None
 
 
-def format_appendices(docx_path: Path) -> None:
+def format_appendices(doc: Document) -> None:
     """
     Форматирует блок "ПРИЛОЖЕНИЯ:" в документе как нумерованный список.
     Убирает старые цифры перед созданием формата списка.
     """
-    doc = _open_docx(docx_path)
     appendices_start = None
     for i, para in enumerate(doc.paragraphs):
         if para.text.strip().upper() == "ПРИЛОЖЕНИЯ:" and any(run.bold for run in para.runs):
@@ -110,10 +107,8 @@ def format_appendices(docx_path: Path) -> None:
                 run.font.italic = italic
         else:
             break
-    doc.save(docx_path)
     
-    
-def insert_bank_table(statement_path: str, path_banks_file: str, bank_name: str):
+def insert_bank_table(doc_statement: Document, doc_requisities: Document, bank_name: str):
     """
     Вставляет таблицу с реквизитами нужного банка в заявление.
 
@@ -121,18 +116,14 @@ def insert_bank_table(statement_path: str, path_banks_file: str, bank_name: str)
     :param path_banks_file: Путь к файлу с реквизитами банков
     :param bank_name: Название банка, чьи реквизиты нужно вставить
     """
-    BANK_REQUISITES_FILE = Path(path_banks_file)
-    stmt_doc = Document(statement_path)
-    bank_doc = Document(BANK_REQUISITES_FILE)
-
     # --- Находим таблицу нужного банка ---
     target_table: Table | None = None
-    for idx, para in enumerate(bank_doc.paragraphs):
+    for idx, para in enumerate(doc_requisities.paragraphs):
         if bank_name.lower() in para.text.lower():
             # ищем первую таблицу после параграфа
-            for child in bank_doc.element.body[idx+1:]:
+            for child in doc_requisities.element.body[idx+1:]:
                 if child.tag.endswith('tbl'):
-                    target_table = Table(child, bank_doc)
+                    target_table = Table(child, doc_requisities)
                     break
             break
 
@@ -141,12 +132,12 @@ def insert_bank_table(statement_path: str, path_banks_file: str, bank_name: str)
 
     # --- Находим таблицу в заявлении ---
     stmt_table: Table | None = None
-    for idx, para in enumerate(stmt_doc.paragraphs):
+    for idx, para in enumerate(doc_statement.paragraphs):
         if para.text.startswith("Реквизиты ПАО Сбербанк для погашения задолженности"):
             # ищем первую таблицу после параграфа
-            for child in stmt_doc.element.body[idx+1:]:
+            for child in doc_statement.element.body[idx+1:]:
                 if child.tag.endswith('tbl'):
-                    stmt_table = Table(child, stmt_doc)
+                    stmt_table = Table(child, doc_statement)
                     break
             break
 
@@ -174,13 +165,9 @@ def insert_bank_table(statement_path: str, path_banks_file: str, bank_name: str)
                 if run.font.color.rgb:
                     new_run.font.color.rgb = run.font.color.rgb
 
-    stmt_doc.save(statement_path)
     
-    
-def get_bank_list(path_banks_file: str) -> list[str]:
+def get_bank_list(doc: Document) -> list[str]:
     # BANK_FILE = Path('settings/bank_requisites.docx')
-    BANK_FILE = Path(path_banks_file)
-    doc = Document(BANK_FILE)
     banks = []
 
     for para in doc.paragraphs:

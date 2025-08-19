@@ -12,7 +12,7 @@ class DocPrepApp(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('DocPrep')
-        self.resize(600, 400)
+        self.resize(600, 500)
         self.setting_controller = None
         self.package_controller = None
         self.init_ui()
