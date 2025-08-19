@@ -5,6 +5,7 @@ from typing import Optional
 from docx import Document
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.table import Table
 
 
 def _open_docx(path: str | Path) -> Document:
@@ -110,13 +111,92 @@ def format_appendices(docx_path: Path) -> None:
         else:
             break
     doc.save(docx_path)
+    
+    
+def insert_bank_table(statement_path: str, bank_name: str):
+    """
+    Вставляет таблицу с реквизитами нужного банка в заявление.
+
+    :param statement_path: Путь к шаблону заявления
+    :param bank_name: Название банка, чьи реквизиты нужно вставить
+    """
+    BANK_REQUISITES_FILE = Path('settings/bank_requisites.docx')
+    stmt_doc = Document(statement_path)
+    bank_doc = Document(BANK_REQUISITES_FILE)
+
+    # --- Находим таблицу нужного банка ---
+    target_table: Table | None = None
+    for idx, para in enumerate(bank_doc.paragraphs):
+        if bank_name.lower() in para.text.lower():
+            # ищем первую таблицу после параграфа
+            for child in bank_doc.element.body[idx+1:]:
+                if child.tag.endswith('tbl'):
+                    target_table = Table(child, bank_doc)
+                    break
+            break
+
+    if target_table is None:
+        raise ValueError(f"Таблица с реквизитами '{bank_name}' не найдена")
+
+    # --- Находим таблицу в заявлении ---
+    stmt_table: Table | None = None
+    for idx, para in enumerate(stmt_doc.paragraphs):
+        if para.text.startswith("Реквизиты ПАО Сбербанк для погашения задолженности"):
+            # ищем первую таблицу после параграфа
+            for child in stmt_doc.element.body[idx+1:]:
+                if child.tag.endswith('tbl'):
+                    stmt_table = Table(child, stmt_doc)
+                    break
+            break
+
+    if stmt_table is None:
+        raise ValueError("Таблица для вставки реквизитов в заявлении не найдена")
+
+    # --- Проверка размеров таблиц ---
+    if len(stmt_table.rows) != len(target_table.rows) or len(stmt_table.columns) != len(target_table.columns):
+        raise ValueError("Таблицы имеют разную размерность")
+
+    # --- Копирование содержимого с сохранением стиля ---
+    for i, row in enumerate(target_table.rows):
+        for j, cell in enumerate(row.cells):
+            stmt_cell = stmt_table.cell(i, j)
+            stmt_cell.text = ""
+            for run in cell.paragraphs[0].runs:
+                new_run = stmt_cell.paragraphs[0].add_run(run.text)
+                new_run.bold = run.bold
+                new_run.italic = run.italic
+                new_run.underline = run.underline
+                if run.font.size:
+                    new_run.font.size = run.font.size
+                if run.font.name:
+                    new_run.font.name = run.font.name
+                if run.font.color.rgb:
+                    new_run.font.color.rgb = run.font.color.rgb
+
+    stmt_doc.save(statement_path)
+    
+    
+def get_bank_list() -> list[str]:
+    BANK_FILE = Path('settings/bank_requisites.docx')
+    doc = Document(BANK_FILE)
+    banks = []
+
+    for para in doc.paragraphs:
+        text = para.text.strip()
+        # Если абзац непустой и перед ним идет таблица (или просто проверяем на слово "Реквизиты")
+        if text.lower().startswith("реквизиты"):
+            # Берем только название банка, удаляя слово "Реквизиты"
+            bank_name = text.split("Реквизиты")[-1].strip()
+            if bank_name:
+                banks.append(bank_name)
+    return banks
 
 if __name__ == '__main__':
     # Пример использования
     try:
         doc_path = Path('заявление на включение требований в РТК_2rsfdofiswdf.docx.docx')
         
-        format_appendices(doc_path)
+        insert_bank_table(doc_path, 'Сибирского банка')
         
     except Exception as e:
         print(f'Ошибка: {e}')
