@@ -19,6 +19,7 @@ class PackageTab(QWidget):
     process_clicked = pyqtSignal()  # Сигнал, для кнопки запуска формирования пакета
     reset_clicked = pyqtSignal()  # Сигнал для кнопки сброса
     checkbox_toggled = pyqtSignal()  # Сигнал для чекбокса "Распаковать архив без заявления"
+    insert_statement_clicked = pyqtSignal()  # Сигнал для кнопки "Найти и добавить заявление в пакет документов"
 
     def __init__(self):
         super().__init__()
@@ -96,6 +97,13 @@ class PackageTab(QWidget):
         self.btn_process = QPushButton('Найти и сформировать пакет документов')
         self.btn_process.clicked.connect(lambda: self.process_clicked.emit())
         layout.addWidget(self.btn_process)
+        
+        # == Кнопка для вставки заявления в пакет документов ==
+        self.btn_insert_statement = QPushButton('Найти и добавить заявление в пакет документов')
+        self.btn_insert_statement.clicked.connect(lambda: self.insert_statement_clicked.emit())
+        self.btn_insert_statement.setVisible(False)  # Скрываем кнопку по умолчанию
+        self.btn_insert_statement.setEnabled(False)  # Делаем кнопку неактивной
+        layout.addWidget(self.btn_insert_statement)
 
         # == Кнопка сброса ==
         self.btn_reset = QPushButton('Сбросить')

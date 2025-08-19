@@ -11,3 +11,14 @@ def sanitize_filename(name: str) -> str:
     
     sanitized = name.replace("/", "-")
     return sanitized
+
+def get_case_number_from_filename(filename: str) -> str:
+    """
+    Извлекает номер дела из имени файла.
+
+    :param filename: Имя файла
+    :param idx: Индекс для поиска номера дела 
+    :return: Номер дела или пустая строка, если не найден
+    """
+    number_case = filename.split(' ')
+    return number_case[3]
