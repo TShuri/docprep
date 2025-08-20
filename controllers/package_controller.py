@@ -51,9 +51,7 @@ class PackageController:
             return
 
         if self.view.checkbox_statement.isChecked():
-            self._form_package_without_statement(
-                folder_path
-            )  # Формирование пакета документов без заявления
+            self._form_package_without_statement(folder_path)  # Формирование пакета документов без заявления
             return
 
         if self.view.bank_selector.currentText() == '— выберите банк —':
@@ -64,9 +62,7 @@ class PackageController:
         if not self.current_path_doc:
             self.view.append_log('Не удалось найти документ РТК в указанной папке.')
             return
-        self._proccess_statement(
-            self.current_path_doc
-        )  # Обработка заявления на включение требований в реестр
+        self._proccess_statement(self.current_path_doc)  # Обработка заявления на включение требований в реестр
 
         self.view.append_log('Пакет документов сформирован.')
 
@@ -87,9 +83,7 @@ class PackageController:
         if not self.current_path_doc:
             self.view.append_log('Не удалось найти Заявление в указанной папке.')
             return
-        self._proccess_statement(
-            self.current_path_doc
-        )  # Обработка заявления на включение требований в реестр
+        self._proccess_statement(self.current_path_doc)  # Обработка заявления на включение требований в реестр
 
         self.view.append_log('Пакет документов сформирован.')
 
@@ -106,12 +100,8 @@ class PackageController:
             # 2️⃣ Разархивировать досье
             path_archive = file_tools.find_dossier_archive(folder)  # Путь к архиву досье
             path_extract = folder / fio_debtor  # Папка для распаковки архива досье
-            path_dossier = file_tools.unzip_archive(
-                path_archive, path_extract
-            )  # Распаковка архива досье
-            file_tools.unzip_all_nested_archives(
-                path_dossier
-            )  # Распаковка вложенных архивов в досье
+            path_dossier = file_tools.unzip_archive(path_archive, path_extract)  # Распаковка архива досье
+            file_tools.unzip_all_nested_archives(path_dossier)  # Распаковка вложенных архивов в досье
             file_tools.delete_file(path_archive)  # Удаление архива досье после распаковки
 
             # 3️⃣ Переместить документ РТК в папку досье
@@ -123,9 +113,7 @@ class PackageController:
 
             # 5️⃣ Скопировать папки обязательств в папку арбитражного дела
             # Исключая папку арбитражного дела, если она уже существует
-            paths_obligations = file_tools.find_folders_obligations(
-                path_dossier
-            )  # Поиск папок обязательств
+            paths_obligations = file_tools.find_folders_obligations(path_dossier)  # Поиск папок обязательств
             for path_oblig in paths_obligations:
                 if path_oblig == path_arbitter:
                     continue
@@ -141,19 +129,11 @@ class PackageController:
         folder = Path(folder_path)
         try:
             path_archive = file_tools.find_dossier_archive(folder)  # Путь к архиву досье
-            case_number = get_case_number_from_filename(
-                path_archive.name
-            )  # Извлечение номера дела из имени архива
-            path_extract = (
-                f'{folder / case_number} без заявления'  # Папка для распаковки архива досье
-            )
-            path_dossier = file_tools.unzip_archive(
-                path_archive, path_extract
-            )  # Распаковка архива досье
+            case_number = get_case_number_from_filename(path_archive.name)  # Извлечение номера дела из имени архива
+            path_extract = (f'{folder / case_number} без заявления') # Папка для распаковки архива досье
+            path_dossier = file_tools.unzip_archive(path_archive, path_extract)  # Распаковка архива досье
             self.current_path_dossier = path_dossier  # Сохраняем путь к папке досье
-            file_tools.unzip_all_nested_archives(
-                path_dossier
-            )  # Распаковка вложенных архивов в досье
+            file_tools.unzip_all_nested_archives(path_dossier)  # Распаковка вложенных архивов в досье
             file_tools.delete_file(path_archive)  # Удаление архива досье после распаковки
 
             self.view.set_current_case(f'{case_number} без заявления')
@@ -211,9 +191,7 @@ class PackageController:
 
             # 2️⃣ Поиск и переименование папки досье
             path_dossier = self.current_path_dossier
-            path_dossier = file_tools.rename_folder(
-                path_dossier, fio_debtor
-            )  # Переименование папки досье
+            path_dossier = file_tools.rename_folder(path_dossier, fio_debtor)  # Переименование папки досье
 
             # 3️⃣ Переместить документ РТК в папку досье
             self.current_path_doc = file_tools.move_file(path_doc, path_dossier)
@@ -224,9 +202,7 @@ class PackageController:
 
             # 5️⃣ Скопировать папки обязательств в папку арбитражного дела
             # Исключая папку арбитражного дела, если она уже существует
-            paths_obligations = file_tools.find_folders_obligations(
-                path_dossier
-            )  # Поиск папок обязательств
+            paths_obligations = file_tools.find_folders_obligations(path_dossier)  # Поиск папок обязательств
             for path_oblig in paths_obligations:
                 if path_oblig == path_arbitter:
                     continue
