@@ -121,13 +121,15 @@ def insert_bank_table(doc_statement: Document, doc_requisities: Document, bank_n
     """
     # --- Находим таблицу нужного банка ---
     target_table: Table | None = None
-    for idx, para in enumerate(doc_requisities.paragraphs):
-        if bank_name.lower() in para.text.lower():
-            # ищем первую таблицу после параграфа
-            for child in doc_requisities.element.body[idx + 1 :]:
-                if child.tag.endswith('tbl'):
-                    target_table = Table(child, doc_requisities)
+    for table in doc_requisities.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                if bank_name.lower() in cell.text.lower():
+                    target_table = table
                     break
+            if target_table:
+                break
+        if target_table:
             break
 
     if target_table is None:
@@ -207,7 +209,7 @@ def delete_words(doc: Document, targets: list[str]) -> None:
             if font_size:
                 for run in para.runs:
                     run.font.size = font_size
-                    run.font.name = 'Timew New Roman'
+                    run.font.name = 'Times New Roman'
 
 
 def delete_paragraphs(doc: Document, targets: list[str]) -> None:
