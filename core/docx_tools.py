@@ -2,10 +2,10 @@ import re
 from pathlib import Path
 from typing import Optional
 
-import docx
 from docx import Document
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import qn
+from docx.shared import Pt
 from docx.table import Table
 from docx.text.paragraph import Paragraph
 
@@ -161,10 +161,10 @@ def insert_bank_table(doc_statement: Document, doc_requisities: Document, bank_n
                 new_run.bold = run.bold
                 new_run.italic = run.italic
                 new_run.underline = run.underline
+                
+                new_run.font.name = 'Times New Roman' #SberOS Не подтягивает шрифт, поэтому прописываем вручную
                 if run.font.size:
                     new_run.font.size = run.font.size
-                if run.font.name:
-                    new_run.font.name = run.font.name
                 if run.font.color.rgb:
                     new_run.font.color.rgb = run.font.color.rgb
 
@@ -207,6 +207,7 @@ def delete_words(doc: Document, targets: list[str]) -> None:
             if font_size:
                 for run in para.runs:
                     run.font.size = font_size
+                    run.font.name = 'Timew New Roman'
 
 
 def delete_paragraphs(doc: Document, targets: list[str]) -> None:
@@ -231,43 +232,59 @@ def insert_gosposhlina(doc: Document, template: Document):
                 found_prosit = True
             continue
         else:
-            # Находим параграф с "1." чтобы взять ФИО
-            if para.text.strip().startswith('1.'):
+             # Находим параграф с "1." чтобы взять ФИО
+            if para.text.strip().startswith("1."):
                 text_1 = para.text
                 # Ищем ФИО между "кредиторов" и "в размере"
-                start = text_1.find('кредиторов')
-                end = text_1.find('в размере')
+                start = text_1.find("кредиторов")
+                end = text_1.find("в размере")
                 if start != -1 and end != -1:
-                    fio_debtor = text_1[start + len('кредиторов') : end].strip()
-                else:
-                    fio_debtor = 'ФИО'
+                    fio_debtor = text_1[start + len("кредиторов") : end].strip()
 
-            if not inserted and para.text.strip().startswith('2.'):
+            if not inserted and para.text.strip().startswith("2."):
                 para_to_copy = template.paragraphs[0]
                 # Заменяем <ФИО> на найденное ФИО прямо в XML
-                p_xml = para_to_copy._p.xml.replace('ФИО', fio_debtor)
-                # Вставляем новый параграф с уже заменённым текстом
-                new_p_element = para._element.addprevious(parse_xml(p_xml))
-                Paragraph(new_p_element, para._parent)
+                p_xml = para_to_copy._p.xml.replace("ФИО", fio_debtor)
+                # Правильно вставляем параграф
+                e = parse_xml(p_xml)                   # распарсили XML
+                para._element.addprevious(e)           # вставили до "2."
+                new_para = Paragraph(e, para._parent)  # обернули в Paragraph
+                # применяем Times New Roman
+                _force_times_new_roman(new_para, size=11)
                 inserted = True
                 start_idx = idx + 1  # Продолжаем с текущего индекса для изменения нумерации
                 break
 
     # Если вставили, идём дальше и увеличиваем номера
     if inserted:
+        current_number = 3
         for para in doc.paragraphs[start_idx:]:
             text = para.text.strip()
             if text.startswith('ПРИЛОЖЕНИЯ'):
                 break
-            # Проверяем, начинается ли параграф с числа и точки
+
+            # Проверяем, начинается ли абзац с цифры и точки
             if len(text) > 1 and text[0].isdigit() and text[1] == '.':
-                num = int(text[0]) + 1
-                # Изменяем первый run, если он содержит цифру
-                for run in para.runs:
-                    if run.text.startswith(text[0] + '.'):
-                        # Сохраняем стиль run, меняем только текст цифры
-                        run.text = f'{num}.' + run.text[2:]
-                        break
+                parts = text.split('.', 1)
+                if len(parts) == 2:
+                    content = parts[1].lstrip()
+                else:
+                    content = ''
+
+                para.clear()
+                
+                # run для цифры + точки (жирная)
+                run_num = para.add_run(f'{current_number}. ')
+                run_num.font.name = 'Times New Roman'
+                run_num.font.size = Pt(11)
+                run_num.font.bold = True
+
+                # run для текста (обычный)
+                run_text = para.add_run(content)
+                run_text.font.name = 'Times New Roman'
+                run_text.font.size = Pt(11)
+
+                current_number += 1
 
 def insert_zalog_contacts(doc: Document, template: Document):
     """
@@ -275,17 +292,38 @@ def insert_zalog_contacts(doc: Document, template: Document):
     который содержит текст 'Электронный адрес: Bankrot_FL@sberbank.ru'.
     """
     target_text = "Электронный адрес: Bankrot_FL@sberbank.ru"
+    template_para_text = template.paragraphs[0].text.strip()
 
+    # Проверяем, есть ли уже такой параграф после target_text
+    for para in doc.paragraphs:
+        if template_para_text in para.text:
+            # Параграф уже вставлен, ничего не делаем
+            return
+
+    # Ищем абзац с target_text
     for para in doc.paragraphs:
         if target_text in para.text:
-            # Берём первый параграф из шаблона
             para_to_copy = template.paragraphs[0]
-
-            # Копируем XML параграфа и вставляем после найденного абзаца
             p_xml = para_to_copy._p.xml
-            new_p_element = para._element.addnext(parse_xml(p_xml))
-            new_para = Paragraph(new_p_element, para._parent)
+            e = parse_xml(p_xml)  # получаем элемент <w:p>
+            para._element.addnext(e)
+            new_para = Paragraph(e, para._parent)
+            _force_times_new_roman(new_para, size=11)
             break
+
+def _force_times_new_roman(paragraph, size=11):
+    """
+    Жёстко задаёт Times New Roman для всех runs в параграфе.
+    Если runs нет, создаёт один run с пустым текстом.
+    """
+    if not paragraph.runs:  # если runs пустые
+        run = paragraph.add_run("")
+        run.font.name = 'Times New Roman'
+        run.font.size = Pt(size)
+    else:
+        for run in paragraph.runs:
+            run.font.name = 'Times New Roman'
+            run.font.size = Pt(size)
 
 if __name__ == '__main__':
     # Пример использования
@@ -293,7 +331,8 @@ if __name__ == '__main__':
         # path_del_paragraphs = 'templates/del_paragraphs.txt'
         # with open(path_del_paragraphs, 'r', encoding='utf-8') as file:
         #     words = [line.strip('\n') for line in file if line.strip()]
-        template = Document(r'templates\zalog_contacts.docx')  # Загружаем шаблон
+        # template = Document(r'templates\gosposhlina.docx')  # Загружаем шаблон
+        template = Document(r'templates\zalog_contacts.docx')
         doc = open_docx('заявление на включение требований в РТК_2rsfdofiswdf.docx.docx')
         insert_zalog_contacts(doc, template)
         doc.save('output.docx')
