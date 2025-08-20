@@ -36,6 +36,16 @@ def get_gosposhlina_template():
     except FileNotFoundError:
         return None
 
+ZALOG_CONTACTS_TEMPLATE_PATH = 'templates/zalog_contacts.docx'
+
+
+def get_zalog_contacts_template():
+    try:
+        z_contacts = open_docx(ZALOG_CONTACTS_TEMPLATE_PATH)
+        return z_contacts
+    except FileNotFoundError:
+        return None
+
 
 if __name__ == '__main__':
     # Пример использования

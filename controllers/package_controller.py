@@ -2,7 +2,7 @@ from pathlib import Path
 
 from core import docx_tools, file_tools
 from utils.settings_utils import load_bank_requisites_directory, load_work_directory
-from utils.templates_utils import load_del_paragraphs, load_del_words, get_gosposhlina_template
+from utils.templates_utils import load_del_paragraphs, load_del_words, get_gosposhlina_template, get_zalog_contacts_template
 from utils.text_utils import get_case_number_from_filename, sanitize_filename
 
 
@@ -174,15 +174,16 @@ class PackageController:
         if self.have_bank_requisites:
             path_requisites = load_bank_requisites_directory()
             doc_requisities = docx_tools.open_docx(path_requisites)
-            _step(
-                'Вставка реквизитов банка',
-                docx_tools.insert_bank_table,
-                doc,
-                doc_requisities,
-                self.view.bank_selector.currentText(),
-            )
+            _step('Вставка реквизитов банка', docx_tools.insert_bank_table, doc, doc_requisities, self.view.bank_selector.currentText())
         else:
             self.view.append_log('Банковские реквизиты не заменены')
+            
+        # Вставка залоговых контактов
+        if self.view.radio_yes4.isChecked():
+            zalog_contacts_temp = get_zalog_contacts_template()
+            if zalog_contacts_temp:
+                _step('Вставка залоговых контактов ', docx_tools.insert_zalog_contacts, doc, zalog_contacts_temp)
+            
 
     def _insert_statement(self, folder_path: str) -> None:
         """Вставка заявления в пакет документов"""

@@ -269,6 +269,23 @@ def insert_gosposhlina(doc: Document, template: Document):
                         run.text = f'{num}.' + run.text[2:]
                         break
 
+def insert_zalog_contacts(doc: Document, template: Document):
+    """
+    Вставляет первый параграф из шаблона в документ после абзаца,
+    который содержит текст 'Электронный адрес: Bankrot_FL@sberbank.ru'.
+    """
+    target_text = "Электронный адрес: Bankrot_FL@sberbank.ru"
+
+    for para in doc.paragraphs:
+        if target_text in para.text:
+            # Берём первый параграф из шаблона
+            para_to_copy = template.paragraphs[0]
+
+            # Копируем XML параграфа и вставляем после найденного абзаца
+            p_xml = para_to_copy._p.xml
+            new_p_element = para._element.addnext(parse_xml(p_xml))
+            new_para = Paragraph(new_p_element, para._parent)
+            break
 
 if __name__ == '__main__':
     # Пример использования
@@ -276,9 +293,9 @@ if __name__ == '__main__':
         # path_del_paragraphs = 'templates/del_paragraphs.txt'
         # with open(path_del_paragraphs, 'r', encoding='utf-8') as file:
         #     words = [line.strip('\n') for line in file if line.strip()]
-        template = Document(r'templates\gosposhlina.docx')  # Загружаем шаблон
+        template = Document(r'templates\zalog_contacts.docx')  # Загружаем шаблон
         doc = open_docx('заявление на включение требований в РТК_2rsfdofiswdf.docx.docx')
-        insert_gosposhlina(doc, template)
+        insert_zalog_contacts(doc, template)
         doc.save('output.docx')
 
     except Exception as e:

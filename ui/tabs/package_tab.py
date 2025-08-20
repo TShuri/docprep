@@ -49,6 +49,7 @@ class PackageTab(QWidget):
         grid1.addLayout(radio_layout1, 0, 0)
         group1.setLayout(grid1)
         layout.addWidget(group1)
+        group1.setEnabled(False)
 
         # === Часть реквизиты ===
         group2 = QGroupBox('Часть Реквизиты')
@@ -85,6 +86,27 @@ class PackageTab(QWidget):
         grid3.addLayout(radio_layout3, 0, 0)
         group3.setLayout(grid3)
         layout.addWidget(group3)
+        group3.setEnabled(False)
+        
+        # === Группа "Вставка по вопросам залога" ===
+        group4 = QGroupBox('Часть Контактная информация')
+        grid4 = QGridLayout()
+        self.group4 = group4
+
+        label4 = QLabel('Вставить "По вопросам, касающихся залога, заключения мирового соглашения..."')
+        self.radio_yes4 = QRadioButton('Да')
+        self.radio_no4 = QRadioButton('Нет')
+        self.radio_yes4.setChecked(True)
+
+        radio_layout4 = QHBoxLayout()
+        radio_layout4.addWidget(label4)
+        radio_layout4.addStretch()
+        radio_layout4.addWidget(self.radio_yes4)
+        radio_layout4.addWidget(self.radio_no4)
+
+        grid4.addLayout(radio_layout4, 0, 0)
+        group4.setLayout(grid4)
+        layout.addWidget(group4)
 
         # == "Без заявления" ==
         layout_checkbox = QHBoxLayout()
