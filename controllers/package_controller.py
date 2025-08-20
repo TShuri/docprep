@@ -2,6 +2,7 @@ from pathlib import Path
 
 from core import docx_tools, file_tools
 from utils.settings_utils import load_bank_requisites_directory, load_work_directory
+from utils.templates_utils import load_del_words
 from utils.text_utils import get_case_number_from_filename, sanitize_filename
 
 
@@ -22,7 +23,7 @@ class PackageController:
     def update_bank_requisites(self):
         path_requirities = load_bank_requisites_directory()
         if not path_requirities:
-            self.view.append_log("Файл с реквизитами банков не найден.")
+            self.view.append_log('Файл с реквизитами банков не найден.')
         else:
             self.have_bank_requisites = True
             doc_requirities = docx_tools.open_docx(path_requirities)
@@ -48,26 +49,28 @@ class PackageController:
         folder_path = Path(load_work_directory())
         
         if not folder_path.exists() or not folder_path.is_dir():
-            self.view.append_log("Пожалуйста, укажите путь к рабочей папке.")
+            self.view.append_log('Пожалуйста, укажите путь к рабочей папке.')
             return
         
         if self.view.checkbox_statement.isChecked():
             self._form_package_without_statement(folder_path)  # Формирование пакета документов без заявления
             return
         
-        if self.view.bank_selector.currentText() == "— выберите банк —":
-            self.view.append_log("Выберите банк перед продолжением.")
+        if self.view.bank_selector.currentText() == '— выберите банк —':
+            self.view.append_log('Выберите банк перед продолжением.')
             return
 
         self._form_package(folder_path) # Формирование пакета документов
         if not self.current_path_doc:
-            self.view.append_log("Не удалось найти документ РТК в указанной папке.")
+            self.view.append_log('Не удалось найти документ РТК в указанной папке.')
             return
         self._proccess_statement(self.current_path_doc)  # Обработка заявления на включение требований в реестр
         
+        self.view.append_log('Пакет документов сформирован.')
+        
     def handle_insert_statement(self):        
-        if self.view.bank_selector.currentText() == "— выберите банк —":
-            self.view.append_log("Выберите банк перед продолжением.")
+        if self.view.bank_selector.currentText() == '— выберите банк —':
+            self.view.append_log('Выберите банк перед продолжением.')
             return
         
         self.view.reset()
@@ -75,14 +78,16 @@ class PackageController:
         folder_path = Path(load_work_directory())
         
         if not folder_path.exists() or not folder_path.is_dir():
-            self.view.append_log("Пожалуйста, укажите путь к рабочей папке.")
+            self.view.append_log('Пожалуйста, укажите путь к рабочей папке.')
             return
         
         self._insert_statement(folder_path)  # Вставка заявления в пакет документов
         if not self.current_path_doc:
-            self.view.append_log("Не удалось найти документ РТК в указанной папке.")
+            self.view.append_log('Не удалось найти Заявление в указанной папке.')
             return
         self._proccess_statement(self.current_path_doc)  # Обработка заявления на включение требований в реестр
+        
+        self.view.append_log('Пакет документов сформирован.')
         
         
     def _form_package(self, folder_path: str):
@@ -118,7 +123,6 @@ class PackageController:
                 file_tools.copy_folder(path_oblig, path_arbitter)
 
             self.view.set_current_case(f'{case_number} {fio_debtor}')
-            self.view.append_log('Пакет документов сформирован.')
 
         except Exception as e:
             self.view.append_log(f'Произошла ошибка: {e}')
@@ -151,11 +155,16 @@ class PackageController:
                 doc.save(path_doc)
             except Exception as e:
                 self.view.append_log(f"{step_name}: ошибка — {e}")
+                
+        # Удаление слов из документа
+        del_words = load_del_words()
+        if del_words:
+            _step('Удаление слов', docx_tools.delete_words, doc, load_del_words())
 
-        # 1️⃣ Форматирование списка приложений
+        # Форматирование списка приложений
         _step('Форматирование приложений', docx_tools.format_appendices, doc)
 
-        # 2️⃣ Вставка реквизитов банка в таблицу
+        # Вставка реквизитов банка в таблицу
         if self.have_bank_requisites:
             path_requisites = load_bank_requisites_directory()
             doc_requisities = docx_tools.open_docx(path_requisites)
@@ -164,7 +173,7 @@ class PackageController:
                     doc, doc_requisities, self.view.bank_selector.currentText()
                 )
         else:
-            self.view.append_log("Банковские реквизиты не заменены")
+            self.view.append_log('Банковские реквизиты не заменены')
             
     def _insert_statement(self, folder_path: str) -> None:
         """Вставка заявления в пакет документов"""
@@ -196,6 +205,5 @@ class PackageController:
                 file_tools.copy_folder(path_oblig, path_arbitter)
 
             self.view.set_current_case(f'{case_number} {fio_debtor}')
-            self.view.append_log('Пакет документов сформирован.')
         except Exception as e:
             self.view.append_log(f"Ошибка при добавлении заявления: {e}")

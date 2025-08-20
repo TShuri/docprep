@@ -5,6 +5,7 @@ from typing import Optional
 from docx import Document
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.shared import RGBColor
 from docx.table import Table
 
 
@@ -70,7 +71,7 @@ def format_appendices(doc: Document) -> None:
     """
     appendices_start = None
     for i, para in enumerate(doc.paragraphs):
-        if para.text.strip().upper() == "ПРИЛОЖЕНИЯ:" and any(run.bold for run in para.runs):
+        if para.text.strip().upper() == 'ПРИЛОЖЕНИЯ:' and any(run.bold for run in para.runs):
             appendices_start = i + 1
             break
 
@@ -82,7 +83,9 @@ def format_appendices(doc: Document) -> None:
     for para in doc.paragraphs[appendices_start:]:
         text = para.text.strip()
         if text and re.match(r'^\d+\.\s+', text):
-            run_formats = [(run.font.name, run.font.size, run.font.bold, run.font.italic) for run in para.runs]
+            run_formats = [
+                (run.font.name, run.font.size, run.font.bold, run.font.italic) for run in para.runs
+            ]
 
             para.text = re.sub(r'^\d+\.\s+', '', text)
 
@@ -107,7 +110,8 @@ def format_appendices(doc: Document) -> None:
                 run.font.italic = italic
         else:
             break
-    
+
+
 def insert_bank_table(doc_statement: Document, doc_requisities: Document, bank_name: str):
     """
     Вставляет таблицу с реквизитами нужного банка в заявление.
@@ -121,7 +125,7 @@ def insert_bank_table(doc_statement: Document, doc_requisities: Document, bank_n
     for idx, para in enumerate(doc_requisities.paragraphs):
         if bank_name.lower() in para.text.lower():
             # ищем первую таблицу после параграфа
-            for child in doc_requisities.element.body[idx+1:]:
+            for child in doc_requisities.element.body[idx + 1 :]:
                 if child.tag.endswith('tbl'):
                     target_table = Table(child, doc_requisities)
                     break
@@ -133,26 +137,28 @@ def insert_bank_table(doc_statement: Document, doc_requisities: Document, bank_n
     # --- Находим таблицу в заявлении ---
     stmt_table: Table | None = None
     for idx, para in enumerate(doc_statement.paragraphs):
-        if para.text.startswith("Реквизиты ПАО Сбербанк для погашения задолженности"):
+        if para.text.startswith('Реквизиты ПАО Сбербанк для погашения задолженности'):
             # ищем первую таблицу после параграфа
-            for child in doc_statement.element.body[idx+1:]:
+            for child in doc_statement.element.body[idx + 1 :]:
                 if child.tag.endswith('tbl'):
                     stmt_table = Table(child, doc_statement)
                     break
             break
 
     if stmt_table is None:
-        raise ValueError("Таблица для вставки реквизитов в заявлении не найдена")
+        raise ValueError('Таблица для вставки реквизитов в заявлении не найдена')
 
     # --- Проверка размеров таблиц ---
-    if len(stmt_table.rows) != len(target_table.rows) or len(stmt_table.columns) != len(target_table.columns):
-        raise ValueError("Таблицы имеют разную размерность")
+    if len(stmt_table.rows) != len(target_table.rows) or len(stmt_table.columns) != len(
+        target_table.columns
+    ):
+        raise ValueError('Таблицы имеют разную размерность')
 
     # --- Копирование содержимого с сохранением стиля ---
     for i, row in enumerate(target_table.rows):
         for j, cell in enumerate(row.cells):
             stmt_cell = stmt_table.cell(i, j)
-            stmt_cell.text = ""
+            stmt_cell.text = ''
             for run in cell.paragraphs[0].runs:
                 new_run = stmt_cell.paragraphs[0].add_run(run.text)
                 new_run.bold = run.bold
@@ -165,27 +171,69 @@ def insert_bank_table(doc_statement: Document, doc_requisities: Document, bank_n
                 if run.font.color.rgb:
                     new_run.font.color.rgb = run.font.color.rgb
 
-    
+
 def get_bank_list(doc: Document) -> list[str]:
+    """Извлекает список банков из документа."""
     # BANK_FILE = Path('settings/bank_requisites.docx')
     banks = []
 
     for para in doc.paragraphs:
         text = para.text.strip()
         # Если абзац непустой и перед ним идет таблица (или просто проверяем на слово "Реквизиты")
-        if text.lower().startswith("реквизиты"):
+        if text.lower().startswith('реквизиты'):
             # Берем только название банка, удаляя слово "Реквизиты"
-            bank_name = text.split("Реквизиты")[-1].strip()
+            bank_name = text.split('Реквизиты')[-1].strip()
             if bank_name:
                 banks.append(bank_name)
     return banks
 
+
+def delete_words(doc: Document, targets: list[str]) -> None:
+    """
+    Удаляет слова/фразы из документа, сбрасывая форматирование,
+    но сохраняя размер шрифта каждого абзаца.
+    """
+    for para in doc.paragraphs:
+        if any(target in para.text for target in targets):
+            # Сохраняем размер шрифта из первого run, если есть
+            font_size = None
+            if para.runs:
+                font_size = para.runs[0].font.size
+
+            # Удаляем слова/фразы
+            text = para.text
+            for target in targets:
+                text = text.replace(target, '')
+            para.text = text
+
+            # Применяем сохранённый размер шрифта ко всему абзацу
+            if font_size:
+                for run in para.runs:
+                    run.font.size = font_size
+
+
+def delete_paragraphs(doc: Document, targets: list[str]) -> None:
+    """
+    Удаляет целиком абзацы, в которых встречаются слова/фразы из targets.
+    """
+    # Создаём копию списка абзацев, чтобы безопасно удалять во время итерации
+    for para in list(doc.paragraphs):
+        if any(target in para.text for target in targets):
+            # Удаляем параграф через XML
+            p_element = para._element
+            p_element.getparent().remove(p_element)
+
+
 if __name__ == '__main__':
     # Пример использования
     try:
-        doc_path = Path('заявление на включение требований в РТК_2rsfdofiswdf.docx.docx')
-        
-        insert_bank_table(doc_path, 'Сибирского банка')
-        
+        path_del_paragraphs = 'templates/del_paragraphs.txt'
+        with open(path_del_paragraphs, 'r', encoding='utf-8') as file:
+            words = [line.strip('\n') for line in file if line.strip()]
+
+        doc = open_docx('заявление на включение требований в РТК_2rsfdofiswdf.docx.docx')
+        delete_paragraphs(doc, words)
+        doc.save('output.docx')
+
     except Exception as e:
         print(f'Ошибка: {e}')

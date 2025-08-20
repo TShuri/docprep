@@ -19,7 +19,9 @@ class PackageTab(QWidget):
     process_clicked = pyqtSignal()  # Сигнал, для кнопки запуска формирования пакета
     reset_clicked = pyqtSignal()  # Сигнал для кнопки сброса
     checkbox_toggled = pyqtSignal()  # Сигнал для чекбокса "Распаковать архив без заявления"
-    insert_statement_clicked = pyqtSignal()  # Сигнал для кнопки "Найти и добавить заявление в пакет документов"
+    insert_statement_clicked = (
+        pyqtSignal()
+    )  # Сигнал для кнопки "Найти и добавить заявление в пакет документов"
 
     def __init__(self):
         super().__init__()
@@ -83,7 +85,7 @@ class PackageTab(QWidget):
         grid3.addLayout(radio_layout3, 0, 0)
         group3.setLayout(grid3)
         layout.addWidget(group3)
-        
+
         # == "Без заявления" ==
         layout_checkbox = QHBoxLayout()
         label_checkbox = QLabel('Распаковать архив без заявления')
@@ -97,7 +99,7 @@ class PackageTab(QWidget):
         self.btn_process = QPushButton('Найти и сформировать пакет документов')
         self.btn_process.clicked.connect(lambda: self.process_clicked.emit())
         layout.addWidget(self.btn_process)
-        
+
         # == Кнопка для вставки заявления в пакет документов ==
         self.btn_insert_statement = QPushButton('Найти и добавить заявление в пакет документов')
         self.btn_insert_statement.clicked.connect(lambda: self.insert_statement_clicked.emit())
