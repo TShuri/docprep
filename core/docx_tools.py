@@ -2,11 +2,12 @@ import re
 from pathlib import Path
 from typing import Optional
 
+import docx
 from docx import Document
-from docx.oxml import OxmlElement
+from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import qn
-from docx.shared import RGBColor
 from docx.table import Table
+from docx.text.paragraph import Paragraph
 
 
 def open_docx(path: str | Path) -> Document:
@@ -83,9 +84,7 @@ def format_appendices(doc: Document) -> None:
     for para in doc.paragraphs[appendices_start:]:
         text = para.text.strip()
         if text and re.match(r'^\d+\.\s+', text):
-            run_formats = [
-                (run.font.name, run.font.size, run.font.bold, run.font.italic) for run in para.runs
-            ]
+            run_formats = [(run.font.name, run.font.size, run.font.bold, run.font.italic) for run in para.runs]
 
             para.text = re.sub(r'^\d+\.\s+', '', text)
 
@@ -149,9 +148,7 @@ def insert_bank_table(doc_statement: Document, doc_requisities: Document, bank_n
         raise ValueError('Таблица для вставки реквизитов в заявлении не найдена')
 
     # --- Проверка размеров таблиц ---
-    if len(stmt_table.rows) != len(target_table.rows) or len(stmt_table.columns) != len(
-        target_table.columns
-    ):
+    if len(stmt_table.rows) != len(target_table.rows) or len(stmt_table.columns) != len(target_table.columns):
         raise ValueError('Таблицы имеют разную размерность')
 
     # --- Копирование содержимого с сохранением стиля ---
@@ -224,15 +221,64 @@ def delete_paragraphs(doc: Document, targets: list[str]) -> None:
             p_element.getparent().remove(p_element)
 
 
+def insert_gosposhlina(doc: Document, template: Document):
+    found_prosit = False
+    inserted = False
+
+    for idx, para in enumerate(doc.paragraphs):
+        if not found_prosit:
+            if para.text.strip() == 'ПРОСИТ СУД:':
+                found_prosit = True
+            continue
+        else:
+            # Находим параграф с "1." чтобы взять ФИО
+            if para.text.strip().startswith('1.'):
+                text_1 = para.text
+                # Ищем ФИО между "кредиторов" и "в размере"
+                start = text_1.find('кредиторов')
+                end = text_1.find('в размере')
+                if start != -1 and end != -1:
+                    fio_debtor = text_1[start + len('кредиторов') : end].strip()
+                else:
+                    fio_debtor = 'ФИО'
+
+            if not inserted and para.text.strip().startswith('2.'):
+                para_to_copy = template.paragraphs[0]
+                # Заменяем <ФИО> на найденное ФИО прямо в XML
+                p_xml = para_to_copy._p.xml.replace('ФИО', fio_debtor)
+                # Вставляем новый параграф с уже заменённым текстом
+                new_p_element = para._element.addprevious(parse_xml(p_xml))
+                Paragraph(new_p_element, para._parent)
+                inserted = True
+                start_idx = idx + 1  # Продолжаем с текущего индекса для изменения нумерации
+                break
+
+    # Если вставили, идём дальше и увеличиваем номера
+    if inserted:
+        for para in doc.paragraphs[start_idx:]:
+            text = para.text.strip()
+            if text.startswith('ПРИЛОЖЕНИЯ'):
+                break
+            # Проверяем, начинается ли параграф с числа и точки
+            if len(text) > 1 and text[0].isdigit() and text[1] == '.':
+                num = int(text[0]) + 1
+                # Изменяем первый run, если он содержит цифру
+                for run in para.runs:
+                    if run.text.startswith(text[0] + '.'):
+                        # Сохраняем стиль run, меняем только текст цифры
+                        run.text = f'{num}.' + run.text[2:]
+                        break
+
+
 if __name__ == '__main__':
     # Пример использования
     try:
-        path_del_paragraphs = 'templates/del_paragraphs.txt'
-        with open(path_del_paragraphs, 'r', encoding='utf-8') as file:
-            words = [line.strip('\n') for line in file if line.strip()]
-
+        # path_del_paragraphs = 'templates/del_paragraphs.txt'
+        # with open(path_del_paragraphs, 'r', encoding='utf-8') as file:
+        #     words = [line.strip('\n') for line in file if line.strip()]
+        template = Document(r'templates\gosposhlina.docx')  # Загружаем шаблон
         doc = open_docx('заявление на включение требований в РТК_2rsfdofiswdf.docx.docx')
-        delete_paragraphs(doc, words)
+        insert_gosposhlina(doc, template)
         doc.save('output.docx')
 
     except Exception as e:

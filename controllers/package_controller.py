@@ -2,7 +2,7 @@ from pathlib import Path
 
 from core import docx_tools, file_tools
 from utils.settings_utils import load_bank_requisites_directory, load_work_directory
-from utils.templates_utils import load_del_paragraphs, load_del_words
+from utils.templates_utils import load_del_paragraphs, load_del_words, get_gosposhlina_template
 from utils.text_utils import get_case_number_from_filename, sanitize_filename
 
 
@@ -130,7 +130,7 @@ class PackageController:
         try:
             path_archive = file_tools.find_dossier_archive(folder)  # Путь к архиву досье
             case_number = get_case_number_from_filename(path_archive.name)  # Извлечение номера дела из имени архива
-            path_extract = (f'{folder / case_number} без заявления') # Папка для распаковки архива досье
+            path_extract = f'{folder / case_number} без заявления'  # Папка для распаковки архива досье
             path_dossier = file_tools.unzip_archive(path_archive, path_extract)  # Распаковка архива досье
             self.current_path_dossier = path_dossier  # Сохраняем путь к папке досье
             file_tools.unzip_all_nested_archives(path_dossier)  # Распаковка вложенных архивов в досье
@@ -161,6 +161,11 @@ class PackageController:
         del_paragraphs = load_del_paragraphs()
         if del_paragraphs:
             _step('Удаление параграфов', docx_tools.delete_paragraphs, doc, del_paragraphs)
+
+        # Вставка шаблона госпошлины
+        gosposhlina_temp = get_gosposhlina_template()
+        if gosposhlina_temp:
+            _step('Вставка шаблона госпошлины', docx_tools.insert_gosposhlina, doc, gosposhlina_temp)
 
         # Форматирование списка приложений
         _step('Форматирование приложений', docx_tools.format_appendices, doc)
