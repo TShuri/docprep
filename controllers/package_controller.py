@@ -182,10 +182,9 @@ class PackageController:
             self.view.append_log('Банковские реквизиты не заменены')
             
         # Вставка залоговых контактов
-        if self.view.radio_yes4.isChecked():
-            zalog_contacts_temp = get_zalog_contacts_template()
-            if zalog_contacts_temp:
-                _step('Вставка залоговых контактов ', docx_tools.insert_zalog_contacts, doc, zalog_contacts_temp)
+        zalog_contacts_temp = get_zalog_contacts_template()
+        if zalog_contacts_temp:
+            _step('Вставка залоговых контактов ', docx_tools.insert_zalog_contacts, doc, zalog_contacts_temp)
             
 
     def _insert_statement(self, folder_path: str) -> None:

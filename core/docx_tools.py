@@ -172,7 +172,7 @@ def insert_bank_table(doc_statement: Document, doc_requisities: Document, bank_n
 
 
 def get_bank_list(doc: Document) -> list[str]:
-    """Извлекает список банков из документа."""
+    """Извлекает список банков из документа с реквизитами банков."""
     # BANK_FILE = Path('settings/bank_requisites.docx')
     banks = []
 
@@ -225,6 +225,11 @@ def delete_paragraphs(doc: Document, targets: list[str]) -> None:
 
 
 def insert_gosposhlina(doc: Document, template: Document):
+    """
+    Вставляет в судебную часть вставку про оплату госпошлины.
+    Берет ФИО из судебной части.
+    Следующие пункты увеличивает на +1.
+    """
     found_prosit = False
     inserted = False
 
@@ -244,6 +249,7 @@ def insert_gosposhlina(doc: Document, template: Document):
                     fio_debtor = text_1[start + len("кредиторов") : end].strip()
 
             if not inserted and para.text.strip().startswith("2."):
+                # --- вставка 1-го параграфа шаблона (Пункт про гп) ---
                 para_to_copy = template.paragraphs[0]
                 # Заменяем <ФИО> на найденное ФИО прямо в XML
                 p_xml = para_to_copy._p.xml.replace("ФИО", fio_debtor)
@@ -253,6 +259,15 @@ def insert_gosposhlina(doc: Document, template: Document):
                 new_para = Paragraph(e, para._parent)  # обернули в Paragraph
                 # применяем Times New Roman
                 _force_times_new_roman(new_para, size=11)
+                
+                 # --- вставка 2-го параграфа шаблона (абзац с размером Pt5) ---
+                para_to_copy2 = template.paragraphs[1]
+                p_xml2 = para_to_copy2._p.xml
+                e2 = parse_xml(p_xml2)
+                new_para._element.addnext(e2)
+                new_para2 = Paragraph(e2, para._parent)
+                _force_times_new_roman(new_para2, size=5)
+                
                 inserted = True
                 start_idx = idx + 1  # Продолжаем с текущего индекса для изменения нумерации
                 break
@@ -269,14 +284,14 @@ def insert_gosposhlina(doc: Document, template: Document):
             if len(text) > 1 and text[0].isdigit() and text[1] == '.':
                 parts = text.split('.', 1)
                 if len(parts) == 2:
-                    content = parts[1].lstrip()
+                    content = parts[1]
                 else:
                     content = ''
 
                 para.clear()
                 
                 # run для цифры + точки (жирная)
-                run_num = para.add_run(f'{current_number}. ')
+                run_num = para.add_run(f'{current_number}.')
                 run_num.font.name = 'Times New Roman'
                 run_num.font.size = Pt(11)
                 run_num.font.bold = True
@@ -290,8 +305,9 @@ def insert_gosposhlina(doc: Document, template: Document):
 
 def insert_zalog_contacts(doc: Document, template: Document):
     """
-    Вставляет первый параграф из шаблона в документ после абзаца,
-    который содержит текст 'Электронный адрес: Bankrot_FL@sberbank.ru'.
+    Вставляет залоговые контакты из шаблона в документ после абзаца,
+    который содержит текст 'Электронный адрес: Bankrot_FL@sberbank.ru'
+    Если в документе уже есть контакты, то не будет вставлять.
     """
     target_text = "Электронный адрес: Bankrot_FL@sberbank.ru"
     template_para_text = template.paragraphs[0].text.strip()
