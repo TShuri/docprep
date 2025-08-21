@@ -45,6 +45,7 @@ def load_gosposhlina_template():
 
 DEL_PARAGRAPHS_GOSPOSHLINA_PATH = 'templates/gosposhlina/del_paragraphs.txt'
 
+
 def load_del_paragraphs_gosposhlina():
     """Загрузка параграфов для удаления в блоке ПРОСИТ СУД"""
     try:
@@ -54,15 +55,19 @@ def load_del_paragraphs_gosposhlina():
     except FileNotFoundError:
         return None
 
-# ==== Шаблоны для блока Контакты ====
-ZALOG_CONTACTS_TEMPLATE_PATH = 'templates/zalog_contacts.docx'
+
+# ==== Шаблоны для блока Приложения ====
 
 
-def get_zalog_contacts_template():
-    """Загрузка шаблона вставки залоговых контактов"""
+DEL_PARAGRAPHS_APPENDICES_PATH = 'templates/appendices/del_paragraphs.txt'
+
+
+def load_del_paragraphs_appendices():
+    """Загрузка параграфов для удаления в блоке Приложения"""
     try:
-        z_contacts = open_docx(ZALOG_CONTACTS_TEMPLATE_PATH)
-        return z_contacts
+        with open(DEL_PARAGRAPHS_APPENDICES_PATH, 'r', encoding='utf-8') as file:
+            paragraphs = [line.strip('\n') for line in file if line.strip()]
+        return paragraphs
     except FileNotFoundError:
         return None
 
@@ -87,6 +92,20 @@ def load_bank_requisites_directory() -> str | None:
         return None
 
     return str(BANK_REQUISITES_FILE.resolve())
+
+
+# ==== Шаблоны для блока Контакты ====
+ZALOG_CONTACTS_TEMPLATE_PATH = 'templates/zalog_contacts.docx'
+
+
+def load_zalog_contacts_template():
+    """Загрузка шаблона вставки залоговых контактов"""
+    try:
+        z_contacts = open_docx(ZALOG_CONTACTS_TEMPLATE_PATH)
+        return z_contacts
+    except FileNotFoundError:
+        return None
+
 
 if __name__ == '__main__':
     load_del_paragraphs_gosposhlina()

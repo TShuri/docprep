@@ -2,12 +2,15 @@ from pathlib import Path
 
 from core import docx_tools, file_tools
 from utils.settings_utils import load_work_directory
-from utils.templates_utils import (get_zalog_contacts_template,
-                                   load_bank_requisites_directory,
-                                   load_del_paragraphs_gosposhlina,
-                                   load_del_paragraphs_obyazatelstv,
-                                   load_del_words_obyazatelstv,
-                                   load_gosposhlina_template)
+from utils.templates_utils import (
+    load_zalog_contacts_template,
+    load_bank_requisites_directory,
+    load_del_paragraphs_gosposhlina,
+    load_del_paragraphs_obyazatelstv,
+    load_del_words_obyazatelstv,
+    load_gosposhlina_template,
+    load_del_paragraphs_appendices,
+)
 from utils.text_utils import get_case_number_from_filename, sanitize_filename
 
 
@@ -153,7 +156,7 @@ class PackageController:
         """Обработка заявления"""
         doc = docx_tools.open_docx(path_doc)
 
-        def _step(step_name: str, func: callable, *args): # Функция для выполнения каждого шага обработки
+        def _step(step_name: str, func: callable, *args):  # Функция для выполнения каждого шага обработки
             try:
                 func(*args)
                 doc.save(path_doc)
@@ -176,13 +179,17 @@ class PackageController:
         del_paragraphs_gosposhlina = load_del_paragraphs_gosposhlina()
         if del_paragraphs_gosposhlina:
             _step('Удаление пунктов в ПРОСИТ СУД', docx_tools.delete_paragraphs_in_gosposhlina, doc, del_paragraphs_gosposhlina)
-        
+
         # Вставка шаблона госпошлины
         gosposhlina_temp = load_gosposhlina_template()
         if gosposhlina_temp:
             _step('Вставка шаблона госпошлины', docx_tools.insert_gosposhlina, doc, gosposhlina_temp)
 
         # === Обработка части Приложения ===
+        del_paragraphs_appendices = load_del_paragraphs_appendices()
+        if del_paragraphs_appendices:
+            _step('Удаление пунктов в Приложения', docx_tools.delete_paragraphs_in_appendices, doc, del_paragraphs_appendices)
+
         # Форматирование списка приложений
         _step('Форматирование приложений', docx_tools.format_appendices, doc)
 
@@ -194,13 +201,12 @@ class PackageController:
             _step('Вставка реквизитов банка', docx_tools.insert_bank_table, doc, doc_requisities, self.view.bank_selector.currentText())
         else:
             self.view.append_log('Банковские реквизиты не заменены')
-            
+
         # === Обработка контактов ===
         # Вставка залоговых контактов
-        zalog_contacts_temp = get_zalog_contacts_template()
+        zalog_contacts_temp = load_zalog_contacts_template()
         if zalog_contacts_temp:
             _step('Вставка залоговых контактов ', docx_tools.insert_zalog_contacts, doc, zalog_contacts_temp)
-            
 
     def _insert_statement(self, folder_path: str) -> None:
         """Вставка заявления в пакет документов"""
