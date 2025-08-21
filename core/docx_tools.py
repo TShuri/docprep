@@ -139,8 +139,8 @@ def insert_bank_table(doc_statement: Document, doc_requisities: Document, bank_n
     stmt_table: Table | None = None
     for idx, para in enumerate(doc_statement.paragraphs):
         if para.text.startswith('Реквизиты ПАО Сбербанк для погашения задолженности'):
-            for child in doc_statement.element.body[idx + 1 :]: 
-                if child.tag.endswith('tbl'): # ищем первую таблицу после параграфа
+            for child in doc_statement.element.body[idx + 1 :]:
+                if child.tag.endswith('tbl'):  # ищем первую таблицу после параграфа
                     stmt_table = Table(child, doc_statement)
                     break
             break
@@ -157,7 +157,7 @@ def insert_bank_table(doc_statement: Document, doc_requisities: Document, bank_n
         for j, cell in enumerate(row.cells):
             stmt_cell = stmt_table.cell(i, j)
             stmt_cell.text = ''
-            
+
             src_para = cell.paragraphs[0]
             dst_para = stmt_cell.paragraphs[0]
 
@@ -188,17 +188,17 @@ def delete_words_in_obyazatelstvo(doc: Document, targets: list[str]) -> None:
     размер шрифта и выставляет Times New Roman.
     """
     start_found = False
-    
+
     for para in doc.paragraphs:
         text = para.text.strip()
-        
+
         if "Обязательство №" in text:
             start_found = True
             continue
         
         if start_found and "ПРОСИТ СУД:" in text:
             break
-        
+
         if start_found and any(target in para.text for target in targets):
             new_text = para.text
             for target in targets:
@@ -215,20 +215,47 @@ def delete_paragraphs_in_obyazatelstvo(doc: Document, targets: list[str]) -> Non
     до абзаца с "ПРОСИТ СУД:" (не включая его)
     """
     start_found = False
-    
+
     for para in list(doc.paragraphs):
         text = para.text.strip()
-        
+
         if "Обязательство №" in text:
             start_found = True
             continue
         
         if start_found and "ПРОСИТ СУД:" in text:
             break
-        
-        if start_found and any(target in para.text for target in targets):    
+
+        if start_found and any(target in para.text for target in targets):
             p_element = para._element
             p_element.getparent().remove(p_element)
+            
+def delete_paragraphs_in_gosposhlina(doc: Document, targets: list[str]) -> None:
+    """Удаляет целиком абзацы, содержащие слова/фразы из targets,
+    но только в диапазоне от абзаца с "ПРОСИТ СУД:"
+    до абзаца с "ПРИЛОЖЕНИЧ:" (не включая его)"""
+    start_found = False
+
+    paragraphs = list(doc.paragraphs)
+    for idx, para in enumerate(paragraphs):
+        text = para.text.strip()
+
+        if "ПРОСИТ СУД:" in text:
+            start_found = True
+            continue
+        
+        if start_found and "ПРИЛОЖЕНИЯ:" in text:
+            break
+
+        if start_found and any(target in para.text for target in targets):
+            p_element = para._element
+            p_element.getparent().remove(p_element)
+            
+            if idx > 0: # удаляем предыдущий абзац(пустая строка), если он существует
+                prev_para = paragraphs[idx - 1]
+                prev_el = prev_para._element
+                if prev_el.getparent() is not None:  # чтобы не упасть, если уже удалён
+                    prev_el.getparent().remove(prev_el)
 
 
 def insert_gosposhlina(doc: Document, template: Document):
@@ -237,78 +264,80 @@ def insert_gosposhlina(doc: Document, template: Document):
     Берет ФИО из судебной части.
     Следующие пункты увеличивает на +1.
     """
-    found_prosit = False
+    start_found = False
     inserted = False
+    fio_debtor = ''
 
     for idx, para in enumerate(doc.paragraphs):
-        if not found_prosit:
-            if para.text.strip() == 'ПРОСИТ СУД:':
-                found_prosit = True
+        text = para.text.strip()
+        
+        if "ПРОСИТ СУД:" in text:
+            start_found = True
             continue
-        else:
-             # Находим параграф с "1." чтобы взять ФИО
-            if para.text.strip().startswith("1."):
+        
+        if start_found and "ПРИЛОЖЕНИЯ:" in text:
+            break
+        
+        if start_found and not inserted:
+            if text.startswith('1.'):  # Находим параграф с "1." чтобы взять ФИО
                 text_1 = para.text
-                # Ищем ФИО между "кредиторов" и "в размере"
-                start = text_1.find("кредиторов")
-                end = text_1.find("в размере")
-                if start != -1 and end != -1:
-                    fio_debtor = text_1[start + len("кредиторов") : end].strip()
+                start = text_1.find('кредиторов')
+                end = text_1.find('в размере')
+                if start != -1 and end != -1:  # Ищем ФИО между "кредиторов" и "в размере"
+                    fio_debtor = text_1[start + len('кредиторов') : end].strip()
+                    continue
 
-            if not inserted and para.text.strip().startswith("2."):
-                # --- вставка 1-го параграфа шаблона (Пункт про гп) ---
+            if text and text[0].isdigit() and text[1] == '.':
+                # --- вставка 1-го параграфа шаблона (Пункт про Госпошлину) ---
                 para_to_copy = template.paragraphs[0]
-                # Заменяем <ФИО> на найденное ФИО прямо в XML
-                p_xml = para_to_copy._p.xml.replace("ФИО", fio_debtor)
-                # Правильно вставляем параграф
-                e = parse_xml(p_xml)                   # распарсили XML
-                para._element.addprevious(e)           # вставили до "2."
-                new_para = Paragraph(e, para._parent)  # обернули в Paragraph
-                # применяем Times New Roman
+                p_xml = para_to_copy._p.xml.replace('ФИО', fio_debtor)
+                e = parse_xml(p_xml)
+                para._element.addprevious(e) 
+                new_para = Paragraph(e, para._parent)
                 _force_font_size(new_para, size=11)
-                
-                 # --- вставка 2-го параграфа шаблона (абзац с размером Pt5) ---
+
+                # --- вставка 2-го параграфа шаблона (абзац с размером Pt5 - пустая строка) ---
                 para_to_copy2 = template.paragraphs[1]
                 p_xml2 = para_to_copy2._p.xml
                 e2 = parse_xml(p_xml2)
                 new_para._element.addnext(e2)
                 new_para2 = Paragraph(e2, para._parent)
                 _force_font_size(new_para2, size=5)
-                
+
                 inserted = True
                 start_idx = idx + 1  # Продолжаем с текущего индекса для изменения нумерации
-                break
 
-    # Если вставили, идём дальше и увеличиваем номера
-    if inserted:
-        current_number = 3
-        for para in doc.paragraphs[start_idx:]:
-            text = para.text.strip()
-            if text.startswith('ПРИЛОЖЕНИЯ'):
-                break
+        # Если вставили, идём дальше и увеличиваем номера
+        if start_found and inserted:
+            current_number = 3
+            for para in doc.paragraphs[start_idx:]:
+                text = para.text.strip()
+                if text.startswith('ПРИЛОЖЕНИЯ'):
+                    break
 
-            # Проверяем, начинается ли абзац с цифры и точки
-            if len(text) > 1 and text[0].isdigit() and text[1] == '.':
-                parts = text.split('.', 1)
-                if len(parts) == 2:
-                    content = parts[1]
-                else:
-                    content = ''
+                # Проверяем, начинается ли абзац с цифры и точки
+                if len(text) > 1 and text[0].isdigit() and text[1] == '.':
+                    parts = text.split('.', 1)
+                    if len(parts) == 2:
+                        content = parts[1]
+                    else:
+                        content = ''
 
-                para.clear()
-                
-                # run для цифры + точки (жирная)
-                run_num = para.add_run(f'{current_number}.')
-                run_num.font.name = 'Times New Roman'
-                run_num.font.size = Pt(11)
-                run_num.font.bold = True
+                    para.clear()
 
-                # run для текста (обычный)
-                run_text = para.add_run(content)
-                run_text.font.name = 'Times New Roman'
-                run_text.font.size = Pt(11)
+                    # run для цифры + точки (жирная)
+                    run_num = para.add_run(f'{current_number}.')
+                    run_num.font.name = 'Times New Roman'
+                    run_num.font.size = Pt(11)
+                    run_num.font.bold = True
 
-                current_number += 1
+                    # run для текста (обычный)
+                    run_text = para.add_run(content)
+                    run_text.font.name = 'Times New Roman'
+                    run_text.font.size = Pt(11)
+
+                    current_number += 1
+
 
 def insert_zalog_contacts(doc: Document, template: Document):
     """
@@ -316,33 +345,31 @@ def insert_zalog_contacts(doc: Document, template: Document):
     который содержит текст 'Электронный адрес: Bankrot_FL@sberbank.ru'
     Если в документе уже есть контакты, то не будет вставлять.
     """
-    target_text = "Электронный адрес: Bankrot_FL@sberbank.ru"
+    target_text = 'Электронный адрес: Bankrot_FL@sberbank.ru'
     template_para_text = template.paragraphs[0].text.strip()
 
-    # Проверяем, есть ли уже такой параграф после target_text
-    for para in doc.paragraphs:
+    for para in doc.paragraphs:  # Проверяем, есть ли уже такой параграф после target_text
         if template_para_text in para.text:
-            # Параграф уже вставлен, ничего не делаем
             return
 
-    # Ищем абзац с target_text
-    for para in doc.paragraphs:
+    for para in doc.paragraphs:  # Ищем абзац с target_text
         if target_text in para.text:
             para_to_copy = template.paragraphs[0]
             p_xml = para_to_copy._p.xml
-            e = parse_xml(p_xml)  # получаем элемент <w:p>
+            e = parse_xml(p_xml)
             para._element.addnext(e)
             new_para = Paragraph(e, para._parent)
             _force_font_size(new_para, size=11)
             break
 
-def _force_font_size(paragraph, font_name = 'Times New Roman', size=11):
+
+def _force_font_size(paragraph, font_name='Times New Roman', size=11):
     """
     Жёстко задаёт Times New Roman для всех runs в параграфе.
     Если runs нет, создаёт один run с пустым текстом.
     """
     if not paragraph.runs:  # если runs пустые
-        run = paragraph.add_run("")
+        run = paragraph.add_run('')
         run.font.name = font_name
         run.font.size = Pt(size)
     else:
@@ -350,16 +377,29 @@ def _force_font_size(paragraph, font_name = 'Times New Roman', size=11):
             run.font.name = font_name
             run.font.size = Pt(size)
 
+
 if __name__ == '__main__':
     # Пример использования
     try:
-        # path_del_paragraphs = 'templates/del_paragraphs.txt'
-        # with open(path_del_paragraphs, 'r', encoding='utf-8') as file:
-        #     words = [line.strip('\n') for line in file if line.strip()]
-        # template = Document(r'templates\gosposhlina.docx')  # Загружаем шаблон
-        template = Document(r'templates\zalog_contacts.docx')
+        try:
+            DEL_PARAGRAPHS_GOSPOSHLINA_PATH = 'templates/gosposhlina/del_paragraphs.txt'
+            with open(DEL_PARAGRAPHS_GOSPOSHLINA_PATH, 'r', encoding='utf-8') as file:
+                paragraphs = [line.strip('\n') for line in file if line.strip()]
+        except FileNotFoundError:
+            print('error')
+
         doc = open_docx('заявление на включение требований в РТК_2rsfdofiswdf.docx.docx')
-        insert_zalog_contacts(doc, template)
+        delete_paragraphs_in_gosposhlina(doc, paragraphs)
+        doc.save('output.docx')
+        
+        try:
+            GOSPOSHLINA_TEMPLATE_PATH = 'templates/gosposhlina/add_gosposhlina.docx'
+            gp_temp = open_docx(GOSPOSHLINA_TEMPLATE_PATH)
+        except FileNotFoundError:
+            print('error temp')
+
+        doc = open_docx('output.docx')
+        insert_gosposhlina(doc, gp_temp)
         doc.save('output.docx')
 
     except Exception as e:

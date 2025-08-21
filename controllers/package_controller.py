@@ -2,11 +2,12 @@ from pathlib import Path
 
 from core import docx_tools, file_tools
 from utils.settings_utils import load_work_directory
-from utils.templates_utils import (get_gosposhlina_template,
-                                   get_zalog_contacts_template,
+from utils.templates_utils import (get_zalog_contacts_template,
                                    load_bank_requisites_directory,
+                                   load_del_paragraphs_gosposhlina,
                                    load_del_paragraphs_obyazatelstv,
-                                   load_del_words_obyazatelstv)
+                                   load_del_words_obyazatelstv,
+                                   load_gosposhlina_template)
 from utils.text_utils import get_case_number_from_filename, sanitize_filename
 
 
@@ -161,24 +162,31 @@ class PackageController:
 
         # === Обработка Обязательств ===
         # Удаление слов из документа
-        del_words = load_del_words_obyazatelstv()
-        if del_words:
-            _step('Удаление слов в Обязательствах', docx_tools.delete_words_in_obyazatelstvo, doc, del_words)
+        del_words_obyaz = load_del_words_obyazatelstv()
+        if del_words_obyaz:
+            _step('Удаление слов в Обязательствах', docx_tools.delete_words_in_obyazatelstvo, doc, del_words_obyaz)
 
         # Удаление параграфов из документа
-        del_paragraphs = load_del_paragraphs_obyazatelstv()
-        if del_paragraphs:
-            _step('Удаление абзацев в Обязательствах', docx_tools.delete_paragraphs_in_obyazatelstvo, doc, del_paragraphs)
+        del_paragraphs_obyaz = load_del_paragraphs_obyazatelstv()
+        if del_paragraphs_obyaz:
+            _step('Удаление абзацев в Обязательствах', docx_tools.delete_paragraphs_in_obyazatelstvo, doc, del_paragraphs_obyaz)
 
         # === Обработка части ПРОСИТ СУД ===
+        # Удаление параграфов из документа
+        del_paragraphs_gosposhlina = load_del_paragraphs_gosposhlina()
+        if del_paragraphs_gosposhlina:
+            _step('Удаление пунктов в ПРОСИТ СУД', docx_tools.delete_paragraphs_in_gosposhlina, doc, del_paragraphs_gosposhlina)
+        
         # Вставка шаблона госпошлины
-        gosposhlina_temp = get_gosposhlina_template()
+        gosposhlina_temp = load_gosposhlina_template()
         if gosposhlina_temp:
             _step('Вставка шаблона госпошлины', docx_tools.insert_gosposhlina, doc, gosposhlina_temp)
 
+        # === Обработка части Приложения ===
         # Форматирование списка приложений
         _step('Форматирование приложений', docx_tools.format_appendices, doc)
 
+        # === Обработка части Реквизиты ===
         # Вставка реквизитов банка в таблицу
         if self.have_bank_requisites:
             path_requisites = load_bank_requisites_directory()
@@ -187,6 +195,7 @@ class PackageController:
         else:
             self.view.append_log('Банковские реквизиты не заменены')
             
+        # === Обработка контактов ===
         # Вставка залоговых контактов
         zalog_contacts_temp = get_zalog_contacts_template()
         if zalog_contacts_temp:
