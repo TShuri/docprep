@@ -3,11 +3,11 @@ from pathlib import Path
 from core.docx_tools import open_docx
 from core.file_tools import copy_file
 
-DEL_WORDS_PATH = 'templates/del_words.txt'
+DEL_WORDS_PATH = 'templates/obyazatelstvo/del_words.txt'
 
 
-def load_del_words() -> list[str]:
-    """Загрузка слов для удаления из файла"""
+def load_del_words_obyazatelstv() -> list[str]:
+    """Загрузка слов для удаления в частях Обязательств"""
     try:
         with open(DEL_WORDS_PATH, 'r', encoding='utf-8') as file:
             words = [line.strip('\n') for line in file if line.strip()]
@@ -16,11 +16,11 @@ def load_del_words() -> list[str]:
         return None
 
 
-DEL_PARAGRAPHS_PATH = 'templates/del_paragraphs.txt'
+DEL_PARAGRAPHS_PATH = 'templates/obyazatelstvo/del_paragraphs.txt'
 
 
-def load_del_paragraphs() -> list[str]:
-    """Загрузка параграфов для удаления из файла"""
+def load_del_paragraphs_obyazatelstv() -> list[str]:
+    """Загрузка параграфов для удаления в частях Обязательств"""
     try:
         with open(DEL_PARAGRAPHS_PATH, 'r', encoding='utf-8') as file:
             paragraphs = [line.strip('\n') for line in file if line.strip()]

@@ -5,7 +5,8 @@ from utils.settings_utils import load_work_directory
 from utils.templates_utils import (get_gosposhlina_template,
                                    get_zalog_contacts_template,
                                    load_bank_requisites_directory,
-                                   load_del_paragraphs, load_del_words)
+                                   load_del_paragraphs_obyazatelstv,
+                                   load_del_words_obyazatelstv)
 from utils.text_utils import get_case_number_from_filename, sanitize_filename
 
 
@@ -91,7 +92,10 @@ class PackageController:
         self.view.append_log('Пакет документов сформирован.')
 
     def _form_package(self, folder_path: str):
-        """Формирование пакета документов по банкротству"""
+        """
+        Формирование пакета документов по банкротству
+        Архив + Заявление
+        """
         folder = Path(folder_path)
         try:
             # 1️⃣ Найти документ РТК и извлечь данные должника
@@ -148,23 +152,25 @@ class PackageController:
         """Обработка заявления"""
         doc = docx_tools.open_docx(path_doc)
 
-        def _step(step_name: str, func: callable, *args):
+        def _step(step_name: str, func: callable, *args): # Функция для выполнения каждого шага обработки
             try:
                 func(*args)
                 doc.save(path_doc)
             except Exception as e:
                 self.view.append_log(f'{step_name}: ошибка — {e}')
 
+        # === Обработка Обязательств ===
         # Удаление слов из документа
-        del_words = load_del_words()
+        del_words = load_del_words_obyazatelstv()
         if del_words:
-            _step('Удаление слов', docx_tools.delete_words, doc, del_words)
+            _step('Удаление слов в Обязательствах', docx_tools.delete_words_in_obyazatelstvo, doc, del_words)
 
         # Удаление параграфов из документа
-        del_paragraphs = load_del_paragraphs()
+        del_paragraphs = load_del_paragraphs_obyazatelstv()
         if del_paragraphs:
-            _step('Удаление параграфов', docx_tools.delete_paragraphs, doc, del_paragraphs)
+            _step('Удаление абзацев в Обязательствах', docx_tools.delete_paragraphs_in_obyazatelstvo, doc, del_paragraphs)
 
+        # === Обработка части ПРОСИТ СУД ===
         # Вставка шаблона госпошлины
         gosposhlina_temp = get_gosposhlina_template()
         if gosposhlina_temp:

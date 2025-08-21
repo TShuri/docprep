@@ -30,27 +30,6 @@ class PackageTab(QWidget):
     def init_ui(self):
         layout = QVBoxLayout()
 
-        # === Группа "Просит суд" ===
-        group1 = QGroupBox('Часть ПРОСИТ СУД')
-        grid1 = QGridLayout()
-        self.group1 = group1  # Сохраняем ссылку на группу для дальнейшего использования
-
-        label1 = QLabel('Удалить пункт Неустойки')
-        self.radio_yes1 = QRadioButton('Да')
-        self.radio_no1 = QRadioButton('Нет')
-        self.radio_yes1.setChecked(True)
-
-        radio_layout1 = QHBoxLayout()
-        radio_layout1.addWidget(label1)
-        radio_layout1.addStretch()
-        radio_layout1.addWidget(self.radio_yes1)
-        radio_layout1.addWidget(self.radio_no1)
-
-        grid1.addLayout(radio_layout1, 0, 0)
-        group1.setLayout(grid1)
-        layout.addWidget(group1)
-        group1.setEnabled(False)
-
         # === Часть реквизиты ===
         group2 = QGroupBox('Часть Реквизиты')
         grid2 = QGridLayout()

@@ -139,9 +139,8 @@ def insert_bank_table(doc_statement: Document, doc_requisities: Document, bank_n
     stmt_table: Table | None = None
     for idx, para in enumerate(doc_statement.paragraphs):
         if para.text.startswith('Реквизиты ПАО Сбербанк для погашения задолженности'):
-            # ищем первую таблицу после параграфа
-            for child in doc_statement.element.body[idx + 1 :]:
-                if child.tag.endswith('tbl'):
+            for child in doc_statement.element.body[idx + 1 :]: 
+                if child.tag.endswith('tbl'): # ищем первую таблицу после параграфа
                     stmt_table = Table(child, doc_statement)
                     break
             break
@@ -158,68 +157,76 @@ def insert_bank_table(doc_statement: Document, doc_requisities: Document, bank_n
         for j, cell in enumerate(row.cells):
             stmt_cell = stmt_table.cell(i, j)
             stmt_cell.text = ''
-            for run in cell.paragraphs[0].runs:
-                new_run = stmt_cell.paragraphs[0].add_run(run.text)
-                new_run.bold = run.bold
-                new_run.italic = run.italic
-                new_run.underline = run.underline
-                
-                new_run.font.name = 'Times New Roman' #SberOS Не подтягивает шрифт, поэтому прописываем вручную
-                if run.font.size:
-                    new_run.font.size = run.font.size
-                if run.font.color.rgb:
-                    new_run.font.color.rgb = run.font.color.rgb
+            
+            src_para = cell.paragraphs[0]
+            dst_para = stmt_cell.paragraphs[0]
+
+            for run in src_para.runs:
+                dst_para.add_run(run.text)
+
+            _force_font_size(dst_para, size=11)
 
 
 def get_bank_list(doc: Document) -> list[str]:
     """Извлекает список банков из документа с реквизитами банков."""
-    # BANK_FILE = Path('settings/bank_requisites.docx')
     banks = []
 
     for para in doc.paragraphs:
         text = para.text.strip()
-        # Если абзац непустой и перед ним идет таблица (или просто проверяем на слово "Реквизиты")
         if text.lower().startswith('реквизиты'):
-            # Берем только название банка, удаляя слово "Реквизиты"
             bank_name = text.split('Реквизиты')[-1].strip()
             if bank_name:
                 banks.append(bank_name)
     return banks
 
 
-def delete_words(doc: Document, targets: list[str]) -> None:
+def delete_words_in_obyazatelstvo(doc: Document, targets: list[str]) -> None:
     """
-    Удаляет слова/фразы из документа, сбрасывая форматирование,
-    но сохраняя размер шрифта каждого абзаца.
+    Удаляет слова/фразы из документа только в диапазоне
+    от "Обязательство №" до "ПРОСИТ СУД:".
+    При этом сбрасывает форматирование текста, но сохраняет
+    размер шрифта и выставляет Times New Roman.
     """
+    start_found = False
+    
     for para in doc.paragraphs:
-        if any(target in para.text for target in targets):
-            # Сохраняем размер шрифта из первого run, если есть
-            font_size = None
-            if para.runs:
-                font_size = para.runs[0].font.size
-
-            # Удаляем слова/фразы
-            text = para.text
+        text = para.text.strip()
+        
+        if "Обязательство №" in text:
+            start_found = True
+            continue
+        
+        if start_found and "ПРОСИТ СУД:" in text:
+            break
+        
+        if start_found and any(target in para.text for target in targets):
+            new_text = para.text
             for target in targets:
-                text = text.replace(target, '')
-            para.text = text
+                new_text = new_text.replace(target, '')
+            para.text = new_text
 
-            # Применяем сохранённый размер шрифта ко всему абзацу
-            if font_size:
-                for run in para.runs:
-                    run.font.size = font_size
-                    run.font.name = 'Times New Roman'
+            _force_font_size(para)
 
 
-def delete_paragraphs(doc: Document, targets: list[str]) -> None:
+def delete_paragraphs_in_obyazatelstvo(doc: Document, targets: list[str]) -> None:
     """
-    Удаляет целиком абзацы, в которых встречаются слова/фразы из targets.
+    Удаляет целиком абзацы, содержащие слова/фразы из targets,
+    но только в диапазоне от абзаца с "Обязательство №"
+    до абзаца с "ПРОСИТ СУД:" (не включая его)
     """
-    # Создаём копию списка абзацев, чтобы безопасно удалять во время итерации
+    start_found = False
+    
     for para in list(doc.paragraphs):
-        if any(target in para.text for target in targets):
-            # Удаляем параграф через XML
+        text = para.text.strip()
+        
+        if "Обязательство №" in text:
+            start_found = True
+            continue
+        
+        if start_found and "ПРОСИТ СУД:" in text:
+            break
+        
+        if start_found and any(target in para.text for target in targets):    
             p_element = para._element
             p_element.getparent().remove(p_element)
 
@@ -258,7 +265,7 @@ def insert_gosposhlina(doc: Document, template: Document):
                 para._element.addprevious(e)           # вставили до "2."
                 new_para = Paragraph(e, para._parent)  # обернули в Paragraph
                 # применяем Times New Roman
-                _force_times_new_roman(new_para, size=11)
+                _force_font_size(new_para, size=11)
                 
                  # --- вставка 2-го параграфа шаблона (абзац с размером Pt5) ---
                 para_to_copy2 = template.paragraphs[1]
@@ -266,7 +273,7 @@ def insert_gosposhlina(doc: Document, template: Document):
                 e2 = parse_xml(p_xml2)
                 new_para._element.addnext(e2)
                 new_para2 = Paragraph(e2, para._parent)
-                _force_times_new_roman(new_para2, size=5)
+                _force_font_size(new_para2, size=5)
                 
                 inserted = True
                 start_idx = idx + 1  # Продолжаем с текущего индекса для изменения нумерации
@@ -326,21 +333,21 @@ def insert_zalog_contacts(doc: Document, template: Document):
             e = parse_xml(p_xml)  # получаем элемент <w:p>
             para._element.addnext(e)
             new_para = Paragraph(e, para._parent)
-            _force_times_new_roman(new_para, size=11)
+            _force_font_size(new_para, size=11)
             break
 
-def _force_times_new_roman(paragraph, size=11):
+def _force_font_size(paragraph, font_name = 'Times New Roman', size=11):
     """
     Жёстко задаёт Times New Roman для всех runs в параграфе.
     Если runs нет, создаёт один run с пустым текстом.
     """
     if not paragraph.runs:  # если runs пустые
         run = paragraph.add_run("")
-        run.font.name = 'Times New Roman'
+        run.font.name = font_name
         run.font.size = Pt(size)
     else:
         for run in paragraph.runs:
-            run.font.name = 'Times New Roman'
+            run.font.name = font_name
             run.font.size = Pt(size)
 
 if __name__ == '__main__':
