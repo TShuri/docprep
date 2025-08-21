@@ -6,9 +6,10 @@ from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
 from utils.settings_utils import (
     load_work_directory,
-    save_bank_requisites_directory,
     save_work_directory,
 )
+
+from utils.templates_utils import save_bank_requisites_directory
 
 
 class SettingsController:

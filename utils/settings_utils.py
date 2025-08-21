@@ -24,21 +24,3 @@ def load_work_directory() -> str | None:
     path = SETTINGS_FILE_WORK_DIR.read_text(encoding="utf-8").strip()
     return path if path else None
 
-
-BANK_REQUISITES_FILE = Path("settings/bank_requisites.docx")
-
-def save_bank_requisites_directory(path: str) -> None:
-    """
-    Сохраняет путь к файлу с реквизитами банка в settings/bank_requisites.docx
-    """
-    copy_file(path, BANK_REQUISITES_FILE)
-
-def load_bank_requisites_directory() -> str | None:
-    """
-    Загружает путь к файлу с реквизитами банка из settings/bank_requisites.docx
-    :return: Путь к файлу с реквизитами или None, если файл не существует
-    """
-    if not BANK_REQUISITES_FILE.exists():
-        return None
-
-    return str(BANK_REQUISITES_FILE.resolve())

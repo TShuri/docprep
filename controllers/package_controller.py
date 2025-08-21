@@ -1,8 +1,11 @@
 from pathlib import Path
 
 from core import docx_tools, file_tools
-from utils.settings_utils import load_bank_requisites_directory, load_work_directory
-from utils.templates_utils import load_del_paragraphs, load_del_words, get_gosposhlina_template, get_zalog_contacts_template
+from utils.settings_utils import load_work_directory
+from utils.templates_utils import (get_gosposhlina_template,
+                                   get_zalog_contacts_template,
+                                   load_bank_requisites_directory,
+                                   load_del_paragraphs, load_del_words)
 from utils.text_utils import get_case_number_from_filename, sanitize_filename
 
 
