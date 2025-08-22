@@ -18,11 +18,7 @@ from PyQt6.QtWidgets import (
 class PackageTab(QWidget):
     process_clicked = pyqtSignal()  # Сигнал, для кнопки запуска формирования пакета
     reset_clicked = pyqtSignal()  # Сигнал для кнопки сброса
-    checkbox_toggled = pyqtSignal()  # Сигнал для чекбокса "Распаковать архив без заявления"
-    insert_statement_clicked = (
-        pyqtSignal()
-    )  # Сигнал для кнопки "Найти и добавить заявление в пакет документов"
-
+    
     def __init__(self):
         super().__init__()
         self.init_ui()
@@ -67,14 +63,14 @@ class PackageTab(QWidget):
         # layout.addWidget(group3)
         # group3.setEnabled(False)
 
-        # == "Без заявления" ==
-        layout_checkbox = QHBoxLayout()
-        label_checkbox = QLabel('Распаковать архив без заявления')
-        self.checkbox_statement = QCheckBox()
-        layout_checkbox.addWidget(label_checkbox)
-        layout_checkbox.addStretch()
-        layout_checkbox.addWidget(self.checkbox_statement)
-        layout.addLayout(layout_checkbox)
+        # # == "Без заявления" ==
+        # layout_checkbox = QHBoxLayout()
+        # label_checkbox = QLabel('Распаковать архив без заявления')
+        # self.checkbox_statement = QCheckBox()
+        # layout_checkbox.addWidget(label_checkbox)
+        # layout_checkbox.addStretch()
+        # layout_checkbox.addWidget(self.checkbox_statement)
+        # layout.addLayout(layout_checkbox)
 
         # == Кнопка запуска формирования пакета ==
         self.btn_process = QPushButton('Найти и сформировать пакет документов')
@@ -82,11 +78,11 @@ class PackageTab(QWidget):
         layout.addWidget(self.btn_process)
 
         # == Кнопка для вставки заявления в пакет документов ==
-        self.btn_insert_statement = QPushButton('Найти и добавить заявление в пакет документов')
-        self.btn_insert_statement.clicked.connect(lambda: self.insert_statement_clicked.emit())
-        self.btn_insert_statement.setVisible(False)  # Скрываем кнопку по умолчанию
-        self.btn_insert_statement.setEnabled(False)  # Делаем кнопку неактивной
-        layout.addWidget(self.btn_insert_statement)
+        # self.btn_insert_statement = QPushButton('Найти и добавить заявление в пакет документов')
+        # self.btn_insert_statement.clicked.connect(lambda: self.insert_statement_clicked.emit())
+        # self.btn_insert_statement.setVisible(False)  # Скрываем кнопку по умолчанию
+        # self.btn_insert_statement.setEnabled(False)  # Делаем кнопку неактивной
+        # layout.addWidget(self.btn_insert_statement)
 
         # == Кнопка сброса ==
         self.btn_reset = QPushButton('Сбросить')

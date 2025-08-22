@@ -9,9 +9,6 @@ from src.utils.settings_utils import (
     save_work_directory,
 )
 
-from src.utils.templates_utils import save_bank_requisites_directory
-
-
 class SettingsController:
     def __init__(self, view):
         """
@@ -22,7 +19,6 @@ class SettingsController:
         # Подписка на сигналы View
         self.view.save_clicked.connect(self.handle_save_work_dir_clicked)
         self.view.browse_clicked.connect(self.handle_browse_work_dir_clicked)
-        self.view.select_bank_clicked.connect(self.handle_browse_bank_requisites_clicked)
         self.view.aplly_settings_clicked.connect(self.handle_apply_settings_clicked)
 
         self._load_work_directory()  # Инициализация рабочего пути
@@ -50,12 +46,6 @@ class SettingsController:
         else:
             QMessageBox.warning(self.view, 'Ошибка', 'Поле пути к рабочей директории пустое.')
 
-    def handle_browse_bank_requisites_clicked(self):
-        """Банковские реквизиты - Обзор"""
-        file_path, _ = QFileDialog.getOpenFileName(self.view, 'Выберите файл с реквизитами банков', '', 'Документы Word (*.docx)')
-        if file_path:
-            save_bank_requisites_directory(file_path)
-            QMessageBox.information(self.view, 'Для применения изменений', 'Чтобы изменения вступили в силу, нажмите «Применить настройки».')
 
     def handle_apply_settings_clicked(self):
         """Применить настройки"""

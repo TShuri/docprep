@@ -76,22 +76,20 @@ def load_del_paragraphs_appendices():
 BANK_REQUISITES_FILE = Path('templates/bank_requisites.docx')
 
 
-def save_bank_requisites_directory(path: str) -> None:
-    """
-    Сохраняет путь к файлу с реквизитами банка в templates/bank_requisites.docx
-    """
-    copy_file(path, BANK_REQUISITES_FILE)
+# def save_bank_requisites_directory(path: str) -> None:
+#     """
+#     Сохраняет путь к файлу с реквизитами банка в templates/bank_requisites.docx
+#     """
+#     copy_file(path, BANK_REQUISITES_FILE)
 
 
-def load_bank_requisites_directory() -> str | None:
-    """
-    Загружает путь к файлу с реквизитами банка из templates/bank_requisites.docx
-    :return: Путь к файлу с реквизитами или None, если файл не существует
-    """
-    if not BANK_REQUISITES_FILE.exists():
+def load_bank_requisites() -> str | None:
+    """Загрузка банковских реквизитов"""
+    try:
+        bank_requisities = open_docx(BANK_REQUISITES_FILE)
+        return bank_requisities
+    except FileNotFoundError:
         return None
-
-    return str(BANK_REQUISITES_FILE.resolve())
 
 
 # ==== Шаблоны для блока Контакты ====
@@ -105,7 +103,3 @@ def load_zalog_contacts_template():
         return z_contacts
     except FileNotFoundError:
         return None
-
-
-if __name__ == '__main__':
-    load_del_paragraphs_gosposhlina()
