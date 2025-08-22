@@ -209,3 +209,4 @@ bank_requisites.docx
 output.docx
 
 *.docx
+/mock
