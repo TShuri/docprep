@@ -46,26 +46,26 @@ class PackageTab(QWidget):
         group2.setLayout(grid2)
         layout.addWidget(group2)
 
-        # === Группа "Вставка подписи" ===
-        group3 = QGroupBox('Часть Подпись')
-        grid3 = QGridLayout()
-        self.group3 = group3
+        # # === Группа "Вставка подписи" ===
+        # group3 = QGroupBox('Часть Подпись')
+        # grid3 = QGridLayout()
+        # self.group3 = group3
 
-        label3 = QLabel('Вставить свою подпись')
-        self.radio_yes3 = QRadioButton('Да')
-        self.radio_no3 = QRadioButton('Нет')
-        self.radio_yes3.setChecked(True)
+        # label3 = QLabel('Вставить свою подпись')
+        # self.radio_yes3 = QRadioButton('Да')
+        # self.radio_no3 = QRadioButton('Нет')
+        # self.radio_yes3.setChecked(True)
 
-        radio_layout3 = QHBoxLayout()
-        radio_layout3.addWidget(label3)
-        radio_layout3.addStretch()
-        radio_layout3.addWidget(self.radio_yes3)
-        radio_layout3.addWidget(self.radio_no3)
+        # radio_layout3 = QHBoxLayout()
+        # radio_layout3.addWidget(label3)
+        # radio_layout3.addStretch()
+        # radio_layout3.addWidget(self.radio_yes3)
+        # radio_layout3.addWidget(self.radio_no3)
 
-        grid3.addLayout(radio_layout3, 0, 0)
-        group3.setLayout(grid3)
-        layout.addWidget(group3)
-        group3.setEnabled(False)
+        # grid3.addLayout(radio_layout3, 0, 0)
+        # group3.setLayout(grid3)
+        # layout.addWidget(group3)
+        # group3.setEnabled(False)
 
         # == "Без заявления" ==
         layout_checkbox = QHBoxLayout()

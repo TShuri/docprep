@@ -5,14 +5,14 @@ from controllers.settings_controller import SettingsController
 from ui.tabs.package_tab import PackageTab
 from ui.tabs.settings_tab import SettingsTab
 
-# from ui.tabs.statement_tab import StatementTab
+from calculator.main import CalculatorWindow
 
 
 class DocPrepApp(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('DocPrep')
-        self.resize(600, 500)
+        self.resize(600, 600)
         self.setting_controller = None
         self.package_controller = None
         self.init_ui()
@@ -23,7 +23,8 @@ class DocPrepApp(QWidget):
 
         package_tab = PackageTab()
         settings_tab = SettingsTab()
-        # statement_tab = StatementTab()
+        
+        calculator_tab = CalculatorWindow()
 
         # Контроллеры
         self.package_controller = PackageController(package_tab)
@@ -31,7 +32,8 @@ class DocPrepApp(QWidget):
 
         tabs.addTab(package_tab, 'Пакет документов')
         tabs.addTab(settings_tab, 'Настройки')
-        # tabs.addTab(statement_tab, "Заявление")
+        
+        tabs.addTab(calculator_tab, 'Калькулятор')
 
         layout.addWidget(tabs)
         self.setLayout(layout)
