@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from core.docx_tools import open_docx
-from core.file_tools import copy_file
+from src.core.docx_tools import open_docx
+from src.core.file_tools import copy_file
 
 # ==== Шаблоны для блока Обязательство ====
 DEL_WORDS_OBYAZATELSTVO_PATH = 'templates/obyazatelstvo/del_words.txt'

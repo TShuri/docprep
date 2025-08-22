@@ -1,11 +1,11 @@
 from PyQt6.QtWidgets import QTabWidget, QVBoxLayout, QWidget
 
-from controllers.package_controller import PackageController
-from controllers.settings_controller import SettingsController
-from ui.tabs.package_tab import PackageTab
-from ui.tabs.settings_tab import SettingsTab
+from src.controllers.package_controller import PackageController
+from src.controllers.settings_controller import SettingsController
+from src.ui.tabs.package_tab import PackageTab
+from src.ui.tabs.settings_tab import SettingsTab
 
-from calculator.main import CalculatorWindow
+from src.calculator.main import CalculatorWindow
 
 
 class DocPrepApp(QWidget):

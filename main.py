@@ -3,7 +3,7 @@ import sys
 
 from PyQt6.QtWidgets import QApplication
 
-from ui.main_window import DocPrepApp  # Импортируем GUI
+from src.ui.main_window import DocPrepApp  # Импортируем GUI
 
 
 def main():

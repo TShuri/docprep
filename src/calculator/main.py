@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout
 )
 
-from calculator.logic import Logic
+from src.calculator.logic import Logic
 
 
 class CalculatorWindow(QWidget):

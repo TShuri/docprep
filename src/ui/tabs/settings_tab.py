@@ -13,12 +13,9 @@ from PyQt6.QtWidgets import (
 
 
 class SettingsTab(QWidget):
-    # Кнопки для пунктов выбора рабочей директории и сохранения
     save_clicked = pyqtSignal()
     browse_clicked = pyqtSignal()
-    
     select_bank_clicked = pyqtSignal()
-    
     aplly_settings_clicked = pyqtSignal()
 
     def __init__(self):
@@ -35,6 +32,7 @@ class SettingsTab(QWidget):
         # Метка и поле ввода
         grid1.addWidget(QLabel("Путь:"), 0, 0)
         self.work_dir_path = QLineEdit()
+        self.work_dir_path.setPlaceholderText('Укажите путь к директории, куда будет скачиваться досье и заявление')
         grid1.addWidget(self.work_dir_path, 0, 1)
 
         # Кнопка "Обзор"
@@ -76,8 +74,9 @@ class SettingsTab(QWidget):
         self.setLayout(main_layout)
 
     # Методы для работы с GUI (контроллер вызывает их)
-    def set_work_dir(self, path: str):
-        self.work_dir_path.setText(path)
+    def set_work_dir(self, path):
+        self.work_dir_path.setText(str(path))
 
     def get_work_dir(self) -> str:
         return self.work_dir_path.text().strip()
+    

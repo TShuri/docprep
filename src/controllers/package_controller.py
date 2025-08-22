@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from core import docx_tools, file_tools
-from utils.settings_utils import load_work_directory
-from utils.templates_utils import (
+from src.core import docx_tools, file_tools
+from src.utils.settings_utils import load_work_directory
+from src.utils.templates_utils import (
     load_zalog_contacts_template,
     load_bank_requisites_directory,
     load_del_paragraphs_gosposhlina,
@@ -11,7 +11,7 @@ from utils.templates_utils import (
     load_gosposhlina_template,
     load_del_paragraphs_appendices,
 )
-from utils.text_utils import get_case_number_from_filename, sanitize_filename
+from src.utils.text_utils import get_case_number_from_filename, sanitize_filename
 
 
 class PackageController:
@@ -52,9 +52,9 @@ class PackageController:
         self.view.reset()
         self.current_path_doc = None
         self.current_path_dossier = None
-        folder_path = Path(load_work_directory())
-
-        if not folder_path.exists() or not folder_path.is_dir():
+        
+        folder_path = load_work_directory()
+        if folder_path is None:
             self.view.append_log('Пожалуйста, укажите путь к рабочей папке.')
             return
 
@@ -81,9 +81,9 @@ class PackageController:
 
         self.view.reset()
         self.current_path_doc = None
-        folder_path = Path(load_work_directory())
-
-        if not folder_path.exists() or not folder_path.is_dir():
+        
+        folder_path = load_work_directory()
+        if folder_path is None:
             self.view.append_log('Пожалуйста, укажите путь к рабочей папке.')
             return
 

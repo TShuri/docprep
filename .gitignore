@@ -202,11 +202,11 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# ДОБАВЛЕННЫЕ
 work_directory.txt
 bank_requisites.docx
 
-заявление на включение требований в РТК_2rsfdofiswdf.docx.docx
-output.docx
-
 *.docx
-/mock
+mock/
+
+settings.json
