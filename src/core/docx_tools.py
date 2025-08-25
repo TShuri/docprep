@@ -415,15 +415,15 @@ def insert_zalog_contacts(doc: Document, template: Document):
             break
 
 
-if __name__ == '__main__':
-    mock_doc = 'mock\заявление на включение требований в РТК_2rsfdofiswdf.docx.docx'
-    temp_add_gp = 'templates/gosposhlina/add_gosposhlina.docx'
-    save_output_mock = 'mock/output.docx'
-    try:
-        doc = open_docx(mock_doc)
-        template = open_docx(temp_add_gp)
+# if __name__ == '__main__':
+#     mock_doc = 'mock\заявление на включение требований в РТК_2rsfdofiswdf.docx.docx'
+#     temp_add_gp = 'templates/gosposhlina/add_gosposhlina.docx'
+#     save_output_mock = 'mock/output.docx'
+#     try:
+#         doc = open_docx(mock_doc)
+#         template = open_docx(temp_add_gp)
 
-        insert_gosposhlina(doc, template)
-        doc.save(save_output_mock)
-    except Exception as e:
-        print(f'Ошибка: {e}')
+#         insert_gosposhlina(doc, template)
+#         doc.save(save_output_mock)
+#     except Exception as e:
+#         print(f'Ошибка: {e}')
