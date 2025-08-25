@@ -53,7 +53,8 @@ def form_package(folder_path: str):
 
     except Exception as e:
         raise e
-    
+
+
 def unpack_package_no_statement(folder_path: str):
     """
     Распаковка пакета документов по банкротству
@@ -70,6 +71,43 @@ def unpack_package_no_statement(folder_path: str):
         file_tools.delete_file(path_archive)  # Удаление архива досье после распаковки
 
         return current_path_dossier, case_number
+
+    except Exception as e:
+        raise e
+
+
+def insert_statement(folder_path: str, path_dossier: str):
+    """
+    Перемещение заявление в распакованный пакет документов по банкротству
+    Архив без Заявления
+    """
+    folder = Path(folder_path)
+    try:
+        # 1 Найти документ РТК и извлечь данные должника
+        path_doc = file_tools.find_rtk_doc(folder)  # Путь к документу РТК
+        doc = docx_tools.open_docx(path_doc)  # Открытие документа РТК
+        fio_debtor = docx_tools.extract_fio_debtor(doc)  # Извлечение ФИО должника
+        case_number = docx_tools.extract_case_number(doc)  # Извлечение номера дела
+        
+        # 2 Переименовывание папки досье
+        path_dossier = file_tools.rename_folder(path_dossier, fio_debtor)
+
+        # 3 Переместить документ РТК в папку досье
+        current_path_doc = file_tools.move_file(path_doc, path_dossier)
+
+        # 4 Создать папку арбитражного дела
+        name_arbitter = path_dossier / f'{sanitize_filename(case_number)} {fio_debtor}'
+        path_arbitter = file_tools.ensure_folder(name_arbitter)
+
+        # 5 Скопировать папки обязательств в папку арбитражного дела
+        # Исключая папку арбитражного дела, если она уже существует
+        paths_obligations = file_tools.find_folders_obligations(path_dossier)  # Поиск папок обязательств
+        for path_oblig in paths_obligations:
+            if path_oblig == path_arbitter:
+                continue
+            file_tools.copy_folder(path_oblig, path_arbitter)
+
+        return current_path_doc, fio_debtor, case_number
 
     except Exception as e:
         raise e

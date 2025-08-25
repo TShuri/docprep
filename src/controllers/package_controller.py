@@ -1,10 +1,10 @@
 from pathlib import Path
 
 from src.core import docx_tools
-from src.core.workflow import form_package, proccess_statement, unpack_package_no_statement
+from src.core.workflow import (form_package, insert_statement,
+                               proccess_statement, unpack_package_no_statement)
 from src.utils.settings_utils import load_work_directory
 from src.utils.templates_utils import load_bank_requisites
-from src.utils.text_utils import sanitize_filename
 
 
 class PackageController:
@@ -14,6 +14,7 @@ class PackageController:
         self.view.checkbox_no_statement.stateChanged.connect(self.handle_checkbox_no_statement)
         self.view.process_clicked.connect(self.handle_process_clicked)
         self.view.unpack_clicked.connect(self.handle_unpack_clicked)
+        self.view.insert_clicked.connect(self.handle_insert_clicked)
         self.view.reset_clicked.connect(self.handle_reset_clicked)
 
         # Инициализация необходимых параметров
@@ -75,12 +76,42 @@ class PackageController:
             return
         
         try:  # Распаковка архива
-            self.current_path_doc, case_number = unpack_package_no_statement(folder)
+            self.current_path_dossier, case_number = unpack_package_no_statement(folder)
             self.view.set_current_case(f'{case_number} без заявления')
             self.view.append_log('Архив документов распакован')
         except Exception as e:
             self.view.append_log(f'Ошибка формирования пакета: {e}')
             return
+        
+    def handle_insert_clicked(self):
+        """Перемещение заявления в разархивированный пакет документов"""
+        self.current_path_doc = None
+        
+        folder = self.get_work_folder()
+        if not folder:  # Проверяем выбрана ли рабочая директория
+            return
+        
+        # Если банковские реквизиты подгружены, то проверяем выбранный банк для вставки реквизитов
+        selected_bank = None
+        if self.have_bank_requisites:
+            selected_bank = self.get_selected_bank()
+            if selected_bank is None:
+                return
+        
+        self.view.reset()
+        try: # Формируем пакет
+            self.current_path_doc, fio_debtor, case_number = insert_statement(folder, self.current_path_dossier)
+            self.view.set_current_case(f'{case_number} {fio_debtor}')
+        except Exception as e:
+            self.view.append_log(f'Ошибка формирования пакета: {e}')
+            return
+        
+        if self.current_path_doc:
+            try:  # Обрабатываем заявление
+                proccess_statement(self.current_path_doc, selected_bank)
+                self.view.append_log('Пакет документов сформирован.')
+            except Exception as e:
+                self.view.append_log(f'Пакет документов сформирован без обработки заявления: {e}')
 
     def handle_reset_clicked(self):
         """Сбросить"""
