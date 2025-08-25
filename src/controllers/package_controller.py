@@ -68,6 +68,8 @@ class PackageController:
                 self.view.append_log('Пакет документов сформирован.')
             except Exception as e:
                 self.view.append_log(f'Пакет документов сформирован без обработки заявления: {e}')
+        
+        self.view.reset_bank()
                 
     def handle_unpack_clicked(self):
         """Распаковка архива пакета документов"""
@@ -120,6 +122,8 @@ class PackageController:
                 self.view.append_log('Пакет документов сформирован.')
             except Exception as e:
                 self.view.append_log(f'Пакет документов сформирован без обработки заявления: {e}')
+        
+        self.view.reset_bank()
 
     def handle_reset_clicked(self):
         """Сбросить"""
