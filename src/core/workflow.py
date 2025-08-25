@@ -11,7 +11,7 @@ from src.utils.templates_utils import (
     load_gosposhlina_template,
     load_zalog_contacts_template,
 )
-from src.utils.text_utils import sanitize_filename
+from src.utils.text_utils import sanitize_filename, get_case_number_from_filename
 
 
 def form_package(folder_path: str):
@@ -50,6 +50,26 @@ def form_package(folder_path: str):
             file_tools.copy_folder(path_oblig, path_arbitter)
 
         return current_path_doc, fio_debtor, case_number
+
+    except Exception as e:
+        raise e
+    
+def unpack_package_no_statement(folder_path: str):
+    """
+    Распаковка пакета документов по банкротству
+    Архив без Заявления
+    """
+    folder = Path(folder_path)
+    try:
+        # 1 Разархивировать досье
+        path_archive = file_tools.find_dossier_archive(folder)  # Путь к архиву досье
+        case_number = get_case_number_from_filename(str(path_archive))
+        path_extract = folder / f'{sanitize_filename(case_number)} без заявления'  # Папка для распаковки архива досье
+        current_path_dossier = file_tools.unzip_archive(path_archive, path_extract)  # Распаковка архива досье
+        file_tools.unzip_all_nested_archives(current_path_dossier)  # Распаковка вложенных архивов в досье
+        file_tools.delete_file(path_archive)  # Удаление архива досье после распаковки
+
+        return current_path_dossier, case_number
 
     except Exception as e:
         raise e

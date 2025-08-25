@@ -17,6 +17,8 @@ from PyQt6.QtWidgets import (
 
 class PackageTab(QWidget):
     process_clicked = pyqtSignal()  # Сигнал, для кнопки запуска формирования пакета
+    unpack_clicked = pyqtSignal() # Сигнал, для кнопки распаковки архива документов
+    insert_clicked = pyqtSignal() # Сигнал, для кнопки вставки заявления
     reset_clicked = pyqtSignal()  # Сигнал для кнопки сброса
     
     def __init__(self):
@@ -30,59 +32,42 @@ class PackageTab(QWidget):
         group2 = QGroupBox('Часть Реквизиты')
         grid2 = QGridLayout()
         self.group2 = group2
-
-        label2 = QLabel('Выберите реквизиты банка для вставки в заявление:')
-        self.bank_selector = QComboBox()
-
         layout2 = QHBoxLayout()
-        layout2.addWidget(label2)
+        layout2.addWidget(QLabel('Выберите реквизиты банка для вставки в заявление:'))
+        self.bank_selector = QComboBox()
         layout2.addWidget(self.bank_selector)
-
         grid2.addLayout(layout2, 0, 0)
         group2.setLayout(grid2)
         layout.addWidget(group2)
 
         # # === Группа "Вставка подписи" ===
-        # group3 = QGroupBox('Часть Подпись')
-        # grid3 = QGridLayout()
-        # self.group3 = group3
 
-        # label3 = QLabel('Вставить свою подпись')
-        # self.radio_yes3 = QRadioButton('Да')
-        # self.radio_no3 = QRadioButton('Нет')
-        # self.radio_yes3.setChecked(True)
-
-        # radio_layout3 = QHBoxLayout()
-        # radio_layout3.addWidget(label3)
-        # radio_layout3.addStretch()
-        # radio_layout3.addWidget(self.radio_yes3)
-        # radio_layout3.addWidget(self.radio_no3)
-
-        # grid3.addLayout(radio_layout3, 0, 0)
-        # group3.setLayout(grid3)
-        # layout.addWidget(group3)
-        # group3.setEnabled(False)
-
-        # # == "Без заявления" ==
-        # layout_checkbox = QHBoxLayout()
-        # label_checkbox = QLabel('Распаковать архив без заявления')
-        # self.checkbox_statement = QCheckBox()
-        # layout_checkbox.addWidget(label_checkbox)
-        # layout_checkbox.addStretch()
-        # layout_checkbox.addWidget(self.checkbox_statement)
-        # layout.addLayout(layout_checkbox)
+        # == "Без заявления" ==
+        layout3 = QHBoxLayout()
+        layout3.addWidget(QLabel('Распаковать архив без заявления'))
+        layout3.addStretch()
+        self.checkbox_no_statement = QCheckBox()
+        layout3.addWidget(self.checkbox_no_statement)
+        layout.addLayout(layout3)
 
         # == Кнопка запуска формирования пакета ==
         self.btn_process = QPushButton('Найти и сформировать пакет документов')
         self.btn_process.clicked.connect(lambda: self.process_clicked.emit())
         layout.addWidget(self.btn_process)
+        
+        # == Кнопка распаковки архива документа (ПРИ ЧЕКБОКСЕ БЕЗ ЗАЯВЛЕНИЯ) ==
+        self.btn_unpack = QPushButton('Найти и распаковать архив документов')
+        self.btn_unpack.setVisible(False)
+        self.btn_unpack.setEnabled(False)
+        self.btn_unpack.clicked.connect(lambda: self.unpack_clicked.emit())
+        layout.addWidget(self.btn_unpack)
 
-        # == Кнопка для вставки заявления в пакет документов ==
-        # self.btn_insert_statement = QPushButton('Найти и добавить заявление в пакет документов')
-        # self.btn_insert_statement.clicked.connect(lambda: self.insert_statement_clicked.emit())
-        # self.btn_insert_statement.setVisible(False)  # Скрываем кнопку по умолчанию
-        # self.btn_insert_statement.setEnabled(False)  # Делаем кнопку неактивной
-        # layout.addWidget(self.btn_insert_statement)
+        # == Кнопка для вставки заявления в пакет документов (ПРИ ЧЕКБОКСЕ БЕЗ ЗАЯВЛЕНИЯ) ==
+        self.btn_insert = QPushButton('Найти и добавить заявление в распакованный архив документов')
+        self.btn_insert.clicked.connect(lambda: self.insert_clicked.emit())
+        self.btn_insert.setVisible(False)  # Скрываем кнопку по умолчанию
+        self.btn_insert.setEnabled(False)  # Делаем кнопку неактивной
+        layout.addWidget(self.btn_insert)
 
         # == Кнопка сброса ==
         self.btn_reset = QPushButton('Сбросить')
@@ -91,8 +76,7 @@ class PackageTab(QWidget):
 
         # == Блок "Текущее дело" ==
         case_layout = QHBoxLayout()
-        self.label_case = QLabel('Текущее дело:')
-        case_layout.addWidget(self.label_case)
+        case_layout.addWidget(QLabel('Текущее дело:'))
         self.current_case = QLineEdit()
         self.current_case.setReadOnly(True)
         case_layout.addWidget(self.current_case)

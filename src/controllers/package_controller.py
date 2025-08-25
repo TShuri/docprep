@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from src.core import docx_tools
-from src.core.workflow import form_package, proccess_statement
+from src.core.workflow import form_package, proccess_statement, unpack_package_no_statement
 from src.utils.settings_utils import load_work_directory
 from src.utils.templates_utils import load_bank_requisites
 from src.utils.text_utils import sanitize_filename
@@ -9,14 +9,29 @@ from src.utils.text_utils import sanitize_filename
 
 class PackageController:
     def __init__(self, view):
+        # Подключение view
         self.view = view
+        self.view.checkbox_no_statement.stateChanged.connect(self.handle_checkbox_no_statement)
         self.view.process_clicked.connect(self.handle_process_clicked)
+        self.view.unpack_clicked.connect(self.handle_unpack_clicked)
         self.view.reset_clicked.connect(self.handle_reset_clicked)
 
+        # Инициализация необходимых параметров
         self.current_path_doc = None  # Путь к документу РТК
         self.current_path_dossier = None  # Путь к папке досье, при распаковке без заявления
         self.have_bank_requisites = False  # Флаг наличия реквизитов банков
         self.update_bank_requisites()
+
+    def handle_checkbox_no_statement(self, state):
+        enabled = state == 0  # 0 = unchecked, 2 = checked
+        self.view.btn_process.setVisible(enabled)  # видимость
+        self.view.btn_process.setEnabled(enabled)  # активность
+
+        self.view.btn_unpack.setVisible(not enabled)  # видимость
+        self.view.btn_unpack.setEnabled(not enabled)  # активность
+
+        self.view.btn_insert.setVisible(not enabled)  # видимость
+        self.view.btn_insert.setEnabled(not enabled)  # активность
 
     def handle_process_clicked(self):
         """Формирование пакета документов"""
@@ -24,30 +39,48 @@ class PackageController:
         self.current_path_doc = None
         self.current_path_dossier = None
 
-        folder = self._get_work_folder()
+        folder = self.get_work_folder()
         if not folder:  # Проверяем выбрана ли рабочая директория
             return
 
         # Если банковские реквизиты подгружены, то проверяем выбранный банк для вставки реквизитов
         selected_bank = None
         if self.have_bank_requisites:
-            selected_bank = self._get_selected_bank()
-            if selected_bank is None: 
+            selected_bank = self.get_selected_bank()
+            if selected_bank is None:
                 return
 
-        try: # Формируем пакет (распаковку)
+        try:  # Формируем пакет (распаковку)
             self.current_path_doc, fio_debtor, case_number = form_package(folder)
             self.view.set_current_case(f'{case_number} {fio_debtor}')
         except Exception as e:
             self.view.append_log(f'Ошибка формирования пакета: {e}')
             return
-            
+
         if self.current_path_doc:
-            try: # Обрабатываем заявление
+            try:  # Обрабатываем заявление
                 proccess_statement(self.current_path_doc, selected_bank)
                 self.view.append_log('Пакет документов сформирован.')
             except Exception as e:
                 self.view.append_log(f'Пакет документов сформирован без обработки заявления: {e}')
+                
+    def handle_unpack_clicked(self):
+        """Распаковка архива пакета документов"""
+        self.view.reset()
+        self.current_path_doc = None
+        self.current_path_dossier = None
+
+        folder = self.get_work_folder()
+        if not folder:  # Проверяем выбрана ли рабочая директория
+            return
+        
+        try:  # Распаковка архива
+            self.current_path_doc, case_number = unpack_package_no_statement(folder)
+            self.view.set_current_case(f'{case_number} без заявления')
+            self.view.append_log('Архив документов распакован')
+        except Exception as e:
+            self.view.append_log(f'Ошибка формирования пакета: {e}')
+            return
 
     def handle_reset_clicked(self):
         """Сбросить"""
@@ -55,11 +88,6 @@ class PackageController:
         self.view.reset()
         self.current_path_doc = None
         self.current_path_dossier = None
-
-    def handle_checkbox_toggled(self, state):
-        enabled = state == 0  # 0 = unchecked, 2 = checked
-        self.view.btn_insert_statement.setVisible(not enabled)  # видимость
-        self.view.btn_insert_statement.setEnabled(not enabled)  # активность
 
     def update_bank_requisites(self):
         """Подгружает список банков при первоначальном запуске"""
@@ -71,14 +99,14 @@ class PackageController:
             banks = docx_tools.get_bank_list(doc_requisites)
             self.view.set_bank_list(banks)
 
-    def _get_work_folder(self) -> Path | None:
+    def get_work_folder(self) -> Path | None:
         """Получает путь рабочей директории"""
         folder_path = load_work_directory()
         if folder_path is None:
             self.view.append_log('Пожалуйста, укажите путь к рабочей папке.')
         return folder_path
 
-    def _get_selected_bank(self) -> str | None:
+    def get_selected_bank(self) -> str | None:
         """Получает выбранный банк"""
         bank_name = self.view.bank_selector.currentText()
         if bank_name == '— выберите банк —':
