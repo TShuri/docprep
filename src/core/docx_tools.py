@@ -1,4 +1,5 @@
 import re
+from copy import deepcopy
 from pathlib import Path
 from typing import Optional
 
@@ -216,24 +217,38 @@ def insert_gosposhlina(doc: Document, template: Document):
                 if text.startswith('ПРИЛОЖЕНИЯ'):
                     break
 
-                # Проверяем, начинается ли абзац с цифры и точки
                 if len(text) > 1 and text[0].isdigit() and text[1] == '.':
-                    parts = text.split('.', 1)
-                    if len(parts) == 2:
-                        content = parts[1]
-                    else:
-                        content = ''
+                    # Сохраняем run, удаляя первую цифру с точкой
+                    original_runs = []
+                    first_run_skipped = False
+                    for r in para.runs:
+                        r_text = r.text
+                        if not first_run_skipped:
+                            # Ищем позицию точки после цифры
+                            dot_idx = r_text.find('.')
+                            if dot_idx != -1:
+                                r_text = r_text[dot_idx + 1:]  # убираем цифру и точку
+                                first_run_skipped = True
+                            else:
+                                # весь run игнорируем, если точка ещё не найдена
+                                continue
+                        # Создаём новый run XML с обрезанным текстом
+                        new_r = deepcopy(r._element)
+                        new_r.text = r_text  # устанавливаем обрезанный текст
+                        original_runs.append(new_r)
 
+                    # Очищаем абзац
                     para.clear()
 
-                    run_num = para.add_run(f'{current_number}.')  # run для цифры + точки (жирная)
+                    # Новый run для номера
+                    run_num = para.add_run(f'{current_number}.')
                     run_num.font.name = 'Times New Roman'
                     run_num.font.size = Pt(11)
                     run_num.font.bold = True
 
-                    run_text = para.add_run(content)  # run для текста (обычный)
-                    run_text.font.name = 'Times New Roman'
-                    run_text.font.size = Pt(11)
+                    # Вставляем оставшиеся run
+                    for r_element in original_runs:
+                        para._element.append(deepcopy(r_element))
 
                     current_number += 1
 
@@ -401,9 +416,14 @@ def insert_zalog_contacts(doc: Document, template: Document):
 
 
 if __name__ == '__main__':
-    # Пример использования
+    mock_doc = 'mock\заявление на включение требований в РТК_2rsfdofiswdf.docx.docx'
+    temp_add_gp = 'templates/gosposhlina/add_gosposhlina.docx'
+    save_output_mock = 'mock/output.docx'
     try:
-        pass
+        doc = open_docx(mock_doc)
+        template = open_docx(temp_add_gp)
 
+        insert_gosposhlina(doc, template)
+        doc.save(save_output_mock)
     except Exception as e:
         print(f'Ошибка: {e}')
