@@ -14,7 +14,7 @@ from src.utils.templates_utils import (
 from src.utils.text_utils import sanitize_filename, get_case_number_from_filename
 
 
-def form_package(folder_path: str):
+def form_package(folder_path: str, save_base_statement=False):
     """
     Формирование пакета документов по банкротству
     Архив + Заявление
@@ -36,6 +36,11 @@ def form_package(folder_path: str):
 
         # 3 Переместить документ РТК в папку досье
         current_path_doc = file_tools.move_file(path_doc, path_dossier)
+        
+        # Если выбрано сохранение исходного заявления
+        if save_base_statement:
+            dst_path = current_path_doc.parent / f"Исходное заявление{current_path_doc.suffix}"
+            file_tools.copy_file(current_path_doc, dst_path)
 
         # 4 Создать папку арбитражного дела
         name_arbitter = path_dossier / f'{sanitize_filename(case_number)} {fio_debtor}'
@@ -76,7 +81,7 @@ def unpack_package_no_statement(folder_path: str):
         raise e
 
 
-def insert_statement(folder_path: str, path_dossier: str):
+def insert_statement(folder_path: str, path_dossier: str, save_base_statement=False):
     """
     Перемещение заявление в распакованный пакет документов по банкротству
     Архив без Заявления
@@ -94,6 +99,11 @@ def insert_statement(folder_path: str, path_dossier: str):
 
         # 3 Переместить документ РТК в папку досье
         current_path_doc = file_tools.move_file(path_doc, path_dossier)
+        
+        # Если выбрано сохранение исходного заявления
+        if save_base_statement:
+            dst_path = current_path_doc.parent / f"Исходное заявление{current_path_doc.suffix}"
+            file_tools.copy_file(current_path_doc, dst_path)
 
         # 4 Создать папку арбитражного дела
         name_arbitter = path_dossier / f'{sanitize_filename(case_number)} {fio_debtor}'

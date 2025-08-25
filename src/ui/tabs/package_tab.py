@@ -26,7 +26,7 @@ class PackageTab(QWidget):
         self.init_ui()
 
     def init_ui(self):
-        layout = QVBoxLayout()
+        main_layout = QVBoxLayout()
 
         # === Часть реквизиты ===
         group2 = QGroupBox('Часть Реквизиты')
@@ -38,41 +38,47 @@ class PackageTab(QWidget):
         layout2.addWidget(self.bank_selector)
         grid2.addLayout(layout2, 0, 0)
         group2.setLayout(grid2)
-        layout.addWidget(group2)
+        main_layout.addWidget(group2)
 
-        # # === Группа "Вставка подписи" ===
+        # == Сохранение исходного заявления ==
+        layout3 = QHBoxLayout()
+        layout3.addWidget(QLabel('Сохранить исходное заявление'))
+        layout3.addStretch()
+        self.checkbox_base_statement = QCheckBox()
+        layout3.addWidget(self.checkbox_base_statement)
+        main_layout.addLayout(layout3)
 
         # == "Без заявления" ==
-        layout3 = QHBoxLayout()
-        layout3.addWidget(QLabel('Распаковать архив без заявления'))
-        layout3.addStretch()
+        layout4 = QHBoxLayout()
+        layout4.addWidget(QLabel('Распаковать архив без заявления'))
+        layout4.addStretch()
         self.checkbox_no_statement = QCheckBox()
-        layout3.addWidget(self.checkbox_no_statement)
-        layout.addLayout(layout3)
+        layout4.addWidget(self.checkbox_no_statement)
+        main_layout.addLayout(layout4)
 
         # == Кнопка запуска формирования пакета ==
         self.btn_process = QPushButton('Найти и сформировать пакет документов')
         self.btn_process.clicked.connect(lambda: self.process_clicked.emit())
-        layout.addWidget(self.btn_process)
+        main_layout.addWidget(self.btn_process)
         
         # == Кнопка распаковки архива документа (ПРИ ЧЕКБОКСЕ БЕЗ ЗАЯВЛЕНИЯ) ==
         self.btn_unpack = QPushButton('Найти и распаковать архив документов')
         self.btn_unpack.setVisible(False)
         self.btn_unpack.setEnabled(False)
         self.btn_unpack.clicked.connect(lambda: self.unpack_clicked.emit())
-        layout.addWidget(self.btn_unpack)
+        main_layout.addWidget(self.btn_unpack)
 
         # == Кнопка для вставки заявления в пакет документов (ПРИ ЧЕКБОКСЕ БЕЗ ЗАЯВЛЕНИЯ) ==
         self.btn_insert = QPushButton('Найти и добавить заявление в распакованный архив документов')
         self.btn_insert.clicked.connect(lambda: self.insert_clicked.emit())
         self.btn_insert.setVisible(False)  # Скрываем кнопку по умолчанию
         self.btn_insert.setEnabled(False)  # Делаем кнопку неактивной
-        layout.addWidget(self.btn_insert)
+        main_layout.addWidget(self.btn_insert)
 
         # == Кнопка сброса ==
         self.btn_reset = QPushButton('Сбросить')
         self.btn_reset.clicked.connect(lambda: self.reset_clicked.emit())
-        layout.addWidget(self.btn_reset)
+        main_layout.addWidget(self.btn_reset)
 
         # == Блок "Текущее дело" ==
         case_layout = QHBoxLayout()
@@ -80,13 +86,13 @@ class PackageTab(QWidget):
         self.current_case = QLineEdit()
         self.current_case.setReadOnly(True)
         case_layout.addWidget(self.current_case)
-        layout.addLayout(case_layout)
+        main_layout.addLayout(case_layout)
 
         # == Поле для логов ==
         self.logs = QTextEdit()
         self.logs.setReadOnly(True)
-        layout.addWidget(self.logs)
-        self.setLayout(layout)
+        main_layout.addWidget(self.logs)
+        self.setLayout(main_layout)
 
     # Методы для обновления интерфейса
     def set_current_case(self, text: str):

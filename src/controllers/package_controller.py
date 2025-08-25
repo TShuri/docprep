@@ -50,9 +50,13 @@ class PackageController:
             selected_bank = self.get_selected_bank()
             if selected_bank is None:
                 return
+        
+        save_base_statement = False
+        if self.view.checkbox_base_statement.isChecked():
+            save_base_statement = True
 
         try:  # Формируем пакет (распаковку)
-            self.current_path_doc, fio_debtor, case_number = form_package(folder)
+            self.current_path_doc, fio_debtor, case_number = form_package(folder, save_base_statement)
             self.view.set_current_case(f'{case_number} {fio_debtor}')
         except Exception as e:
             self.view.append_log(f'Ошибка формирования пакета: {e}')
@@ -97,10 +101,14 @@ class PackageController:
             selected_bank = self.get_selected_bank()
             if selected_bank is None:
                 return
+            
+        save_base_statement = False
+        if self.view.checkbox_base_statement.isChecked():
+            save_base_statement = True
         
         self.view.reset()
         try: # Формируем пакет
-            self.current_path_doc, fio_debtor, case_number = insert_statement(folder, self.current_path_dossier)
+            self.current_path_doc, fio_debtor, case_number = insert_statement(folder, self.current_path_dossier, save_base_statement)
             self.view.set_current_case(f'{case_number} {fio_debtor}')
         except Exception as e:
             self.view.append_log(f'Ошибка формирования пакета: {e}')
