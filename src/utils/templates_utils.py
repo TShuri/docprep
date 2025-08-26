@@ -104,7 +104,7 @@ def load_zalog_contacts_template():
         return None
 
 
-SIGNA_PATH = 'templates/signa.png'
+SIGNA_PATH = 'templates/Факсимиле.png'
 
 
 def load_path_signa() -> Path:
