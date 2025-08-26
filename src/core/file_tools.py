@@ -3,13 +3,15 @@ import zipfile
 from pathlib import Path
 from typing import List, Optional
 
+import rarfile
+
 
 def unzip_archive(archive_path: str | Path, extract_to: Optional[str | Path] = None) -> Path:
     """
-    Разархивирует ZIP-архив в указанную папку.
+    Разархивирует ZIP или RAR архив в указанную папку.
     Если extract_to не указан, распаковывает в той же папке, где архив.
 
-    :param archive_path: Путь к ZIP-файлу.
+    :param archive_path: Путь к архиву.
     :param extract_to: Папка, куда распаковать.
     :return: Путь к папке, в которую был извлечён архив.
     """
@@ -18,16 +20,20 @@ def unzip_archive(archive_path: str | Path, extract_to: Optional[str | Path] = N
     if not archive_path.exists():
         raise FileNotFoundError(f'Архив {archive_path} не найден')
 
-    if archive_path.suffix.lower() != '.zip':
-        raise ValueError(f'Неподдерживаемый формат архива: {archive_path.suffix}')
-
-    if extract_to is None:  # Если extract_to не задан, распаковываем в той же папке, где архив
+    if extract_to is None:
         extract_to = archive_path.parent / archive_path.stem
     else:
         extract_to = Path(extract_to)
 
-    with zipfile.ZipFile(archive_path, 'r') as zip_ref:
-        zip_ref.extractall(extract_to)
+    suffix = archive_path.suffix.lower()
+    if suffix == '.zip':
+        with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_to)
+    elif suffix == '.rar':
+        with rarfile.RarFile(archive_path) as rar_ref:
+            rar_ref.extractall(extract_to)
+    else:
+        raise ValueError(f'Неподдерживаемый формат архива: {archive_path.suffix}')
 
     return extract_to
 
@@ -39,9 +45,12 @@ def unzip_all_nested_archives(folder: str | Path) -> None:
     """
     folder = Path(folder)
 
-    for zip_file in folder.rglob('*.zip'):  # Ищем все ZIP в папке и подпапках
-        extract_to = zip_file.parent / zip_file.stem
-        unzip_archive(zip_file, extract_to)
+    for archive_file in folder.rglob('*'):
+        if archive_file.suffix.lower() not in ('.zip', '.rar'):
+            continue  # Ищем все ZIP в папке и подпапках
+
+        extract_to = archive_file.parent / archive_file.stem
+        unzip_archive(archive_file, extract_to)
         # После распаковки можно рекурсивно проверить новую папку на вложенные архивы
         unzip_all_nested_archives(extract_to)
 
