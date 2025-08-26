@@ -1,5 +1,6 @@
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
+    QButtonGroup,
     QCheckBox,
     QComboBox,
     QGridLayout,
@@ -17,10 +18,10 @@ from PyQt6.QtWidgets import (
 
 class PackageTab(QWidget):
     process_clicked = pyqtSignal()  # Сигнал, для кнопки запуска формирования пакета
-    unpack_clicked = pyqtSignal() # Сигнал, для кнопки распаковки архива документов
-    insert_clicked = pyqtSignal() # Сигнал, для кнопки вставки заявления
+    unpack_clicked = pyqtSignal()  # Сигнал, для кнопки распаковки архива документов
+    insert_clicked = pyqtSignal()  # Сигнал, для кнопки вставки заявления
     reset_clicked = pyqtSignal()  # Сигнал для кнопки сброса
-    
+
     def __init__(self):
         super().__init__()
         self.init_ui()
@@ -40,27 +41,52 @@ class PackageTab(QWidget):
         group2.setLayout(grid2)
         main_layout.addWidget(group2)
 
-        # == Сохранение исходного заявления ==
+        # === Часть Подпись ===
+        group3 = QGroupBox('Часть Подпись')
+        self.group3 = group3
         layout3 = QHBoxLayout()
-        layout3.addWidget(QLabel('Сохранить исходное заявление'))
+        layout3.addWidget(QLabel('Вставить свою подпись в конце заявления'))
         layout3.addStretch()
+
+        # Радиокнопки
+        radio_yes = QRadioButton("Да")
+        radio_no = QRadioButton("Нет")
+        radio_yes.setChecked(True)  # по умолчанию "Да"
+        # Объединяем в группу, чтобы выбор был взаимоисключающим
+        radio_group = QButtonGroup()
+        radio_group.addButton(radio_yes)
+        radio_group.addButton(radio_no)
+        layout3.addWidget(radio_yes)
+        layout3.addWidget(radio_no)
+
+        group3.setLayout(layout3)
+        main_layout.addWidget(group3)
+
+        self.radio_yes = radio_yes
+        self.radio_no = radio_no
+        self.radio_group = radio_group
+
+        # == Сохранение исходного заявления ==
+        layout4 = QHBoxLayout()
+        layout4.addWidget(QLabel('Сохранить исходное заявление'))
+        layout4.addStretch()
         self.checkbox_base_statement = QCheckBox()
-        layout3.addWidget(self.checkbox_base_statement)
-        main_layout.addLayout(layout3)
+        layout4.addWidget(self.checkbox_base_statement)
+        main_layout.addLayout(layout4)
 
         # == "Без заявления" ==
-        layout4 = QHBoxLayout()
-        layout4.addWidget(QLabel('Распаковать архив без заявления'))
-        layout4.addStretch()
+        layout5 = QHBoxLayout()
+        layout5.addWidget(QLabel('Распаковать архив без заявления'))
+        layout5.addStretch()
         self.checkbox_no_statement = QCheckBox()
-        layout4.addWidget(self.checkbox_no_statement)
-        main_layout.addLayout(layout4)
+        layout5.addWidget(self.checkbox_no_statement)
+        main_layout.addLayout(layout5)
 
         # == Кнопка запуска формирования пакета ==
         self.btn_process = QPushButton('Найти и сформировать пакет документов')
         self.btn_process.clicked.connect(lambda: self.process_clicked.emit())
         main_layout.addWidget(self.btn_process)
-        
+
         # == Кнопка распаковки архива документа (ПРИ ЧЕКБОКСЕ БЕЗ ЗАЯВЛЕНИЯ) ==
         self.btn_unpack = QPushButton('Найти и распаковать архив документов')
         self.btn_unpack.setVisible(False)

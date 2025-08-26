@@ -9,6 +9,7 @@ from src.utils.settings_utils import (
     save_work_directory,
 )
 
+
 class SettingsController:
     def __init__(self, view):
         """

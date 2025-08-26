@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from src.core.docx_tools import open_docx
-from src.core.file_tools import copy_file
 
 # ==== Шаблоны для блока Обязательство ====
 DEL_WORDS_OBYAZATELSTVO_PATH = 'templates/obyazatelstvo/del_words.txt'
@@ -101,5 +100,23 @@ def load_zalog_contacts_template():
     try:
         z_contacts = open_docx(ZALOG_CONTACTS_TEMPLATE_PATH)
         return z_contacts
+    except FileNotFoundError:
+        return None
+
+
+SIGNA_PATH = 'templates/signa.png'
+
+
+def load_path_signa() -> Path:
+    """Загрузка пути к подписи"""
+    try:
+        # Приводим к Path для удобной работы
+        signa_path = Path(SIGNA_PATH)
+
+        if not signa_path.exists():
+            raise FileNotFoundError(f'Файл подписи не найден: {signa_path}')
+
+        return signa_path
+
     except FileNotFoundError:
         return None

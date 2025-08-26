@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from src.core import docx_tools, file_tools
-from src.utils.settings_utils import load_work_directory
 from src.utils.templates_utils import (
     load_bank_requisites,
     load_del_paragraphs_appendices,
@@ -9,9 +8,10 @@ from src.utils.templates_utils import (
     load_del_paragraphs_obyazatelstv,
     load_del_words_obyazatelstv,
     load_gosposhlina_template,
+    load_path_signa,
     load_zalog_contacts_template,
 )
-from src.utils.text_utils import sanitize_filename, get_case_number_from_filename
+from src.utils.text_utils import get_case_number_from_filename, sanitize_filename
 
 
 def form_package(folder_path: str, save_base_statement=False):
@@ -36,7 +36,7 @@ def form_package(folder_path: str, save_base_statement=False):
 
         # 3 Переместить документ РТК в папку досье
         current_path_doc = file_tools.move_file(path_doc, path_dossier)
-        
+
         # Если выбрано сохранение исходного заявления
         if save_base_statement:
             dst_path = current_path_doc.parent / f"Исходное заявление{current_path_doc.suffix}"
@@ -93,13 +93,13 @@ def insert_statement(folder_path: str, path_dossier: str, save_base_statement=Fa
         doc = docx_tools.open_docx(path_doc)  # Открытие документа РТК
         fio_debtor = docx_tools.extract_fio_debtor(doc)  # Извлечение ФИО должника
         case_number = docx_tools.extract_case_number(doc)  # Извлечение номера дела
-        
+
         # 2 Переименовывание папки досье
         path_dossier = file_tools.rename_folder(path_dossier, fio_debtor)
 
         # 3 Переместить документ РТК в папку досье
         current_path_doc = file_tools.move_file(path_doc, path_dossier)
-        
+
         # Если выбрано сохранение исходного заявления
         if save_base_statement:
             dst_path = current_path_doc.parent / f"Исходное заявление{current_path_doc.suffix}"
@@ -123,7 +123,7 @@ def insert_statement(folder_path: str, path_dossier: str, save_base_statement=Fa
         raise e
 
 
-def proccess_statement(path_doc: Path, bank):
+def proccess_statement(path_doc: Path, bank, signa):
     """Обработка заявления"""
     doc = docx_tools.open_docx(path_doc)
 
@@ -176,3 +176,8 @@ def proccess_statement(path_doc: Path, bank):
     zalog_contacts_temp = load_zalog_contacts_template()
     if zalog_contacts_temp:
         _step('Вставка залоговых контактов ', docx_tools.insert_zalog_contacts, doc, zalog_contacts_temp)
+
+    # Вставка подписи
+    if signa:
+        path_signa = load_path_signa()
+        _step('Вставка подписи', docx_tools.insert_signature, doc, path_signa)

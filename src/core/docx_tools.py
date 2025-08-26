@@ -4,9 +4,10 @@ from pathlib import Path
 from typing import Optional
 
 from docx import Document
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import qn
-from docx.shared import Pt
+from docx.shared import Cm, Pt
 from docx.table import Table
 from docx.text.paragraph import Paragraph
 
@@ -390,6 +391,20 @@ def get_bank_list(doc: Document) -> list[str]:
                 banks.append(bank_name)
     return banks
 
+def insert_signature(doc: Document, signa_path: Path):
+    """
+    Добавляет подпись в самый последний абзац документа и центрирует её.
+
+    :param doc: Document - объект python-docx
+    :param signa_path: Path - путь к картинке подписи
+    :param width_cm: ширина подписи в сантиметрах (по умолчанию 5 см)
+    """
+    last_paragraph = doc.paragraphs[-1] # Берём последний абзац
+    last_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER# Центрируем абзац
+
+    run = last_paragraph.add_run() # Вставляем подпись
+    run.add_picture(str(signa_path), width=Cm(3))
+
 
 def insert_zalog_contacts(doc: Document, template: Document):
     """
@@ -417,13 +432,13 @@ def insert_zalog_contacts(doc: Document, template: Document):
 
 # if __name__ == '__main__':
 #     mock_doc = 'mock\заявление на включение требований в РТК_2rsfdofiswdf.docx.docx'
-#     temp_add_gp = 'templates/gosposhlina/add_gosposhlina.docx'
+#     signa_path = 'templates/signa.png'
+#     # temp_add_gp = 'templates/gosposhlina/add_gosposhlina.docx'
 #     save_output_mock = 'mock/output.docx'
 #     try:
 #         doc = open_docx(mock_doc)
-#         template = open_docx(temp_add_gp)
-
-#         insert_gosposhlina(doc, template)
+#         # template = open_docx(temp_add_gp)
+#         insert_signature(doc, signa_path)
 #         doc.save(save_output_mock)
 #     except Exception as e:
 #         print(f'Ошибка: {e}')
