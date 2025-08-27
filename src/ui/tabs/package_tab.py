@@ -49,8 +49,8 @@ class PackageTab(QWidget):
         layout3.addStretch()
 
         # Радиокнопки
-        radio_yes = QRadioButton("Да")
-        radio_no = QRadioButton("Нет")
+        radio_yes = QRadioButton('Да')
+        radio_no = QRadioButton('Нет')
         radio_yes.setChecked(True)  # по умолчанию "Да"
         # Объединяем в группу, чтобы выбор был взаимоисключающим
         radio_group = QButtonGroup()
@@ -66,21 +66,34 @@ class PackageTab(QWidget):
         self.radio_no = radio_no
         self.radio_group = radio_group
 
-        # == Сохранение исходного заявления ==
-        layout4 = QHBoxLayout()
-        layout4.addWidget(QLabel('Сохранить исходное заявление'))
-        layout4.addStretch()
-        self.checkbox_base_statement = QCheckBox()
-        layout4.addWidget(self.checkbox_base_statement)
-        main_layout.addLayout(layout4)
+        # == Распаковка ==
+        group4 = QGroupBox('Распаковка')
+        grid4 = QGridLayout()
+        self.group4 = group4
 
-        # == "Без заявления" ==
-        layout5 = QHBoxLayout()
-        layout5.addWidget(QLabel('Распаковать архив без заявления'))
-        layout5.addStretch()
+        # Сохранение исходного заявления
+        label_base = QLabel('Сохранить исходное заявление')
+        self.checkbox_base_statement = QCheckBox()
+        grid4.addWidget(label_base, 0, 0)
+        grid4.addWidget(self.checkbox_base_statement, 0, 1)
+
+        # Без заявления
+        label_no = QLabel('Распаковать архив без заявления')
         self.checkbox_no_statement = QCheckBox()
-        layout5.addWidget(self.checkbox_no_statement)
-        main_layout.addLayout(layout5)
+        grid4.addWidget(label_no, 1, 0)
+        grid4.addWidget(self.checkbox_no_statement, 1, 1)
+
+        # Копирование папок обязательств
+        label_copy = QLabel('Объединить содержимое папок всех обязательств в одну папку арбитра')
+        self.checkbox_all_in_arbitter = QCheckBox()
+        grid4.addWidget(label_copy, 2, 0)
+        grid4.addWidget(self.checkbox_all_in_arbitter, 2, 1)
+
+        grid4.setColumnStretch(0, 1)
+        grid4.setColumnStretch(1, 0)
+
+        group4.setLayout(grid4)
+        main_layout.addWidget(group4)
 
         # == Кнопка запуска формирования пакета ==
         self.btn_process = QPushButton('Найти и сформировать пакет документов')

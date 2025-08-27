@@ -1,3 +1,4 @@
+import os
 import shutil
 import zipfile
 from pathlib import Path
@@ -279,6 +280,34 @@ def find_folders_obligations(folder: str | Path) -> List[Path]:
         for subfolder in folder.iterdir()
         if subfolder.is_dir() and subfolder.name != 'Документы о банкротстве'
     ]
+
+def copy_contents_with_num(src_folder: str, target_folder: str, num_oblig: str):
+    """Копирует содержимое src_folder в target_folder.
+    Если имя файла/папки не содержит num_oblig, добавляет его в имя.
+    """
+    for item in os.listdir(src_folder):
+        src_path = os.path.join(src_folder, item)
+
+        # Добавляем num_oblig к имени, если его там нет
+        if num_oblig not in item:
+            base, ext = os.path.splitext(item)
+            item = f"{base}_{num_oblig}{ext}"
+
+        dst_path = os.path.join(target_folder, item)
+
+        if os.path.isdir(src_path):
+            # Рекурсивно копируем содержимое папки
+            copy_contents_with_num(src_path, target_folder, num_oblig)
+        else:
+            # Копируем файл
+            if os.path.exists(dst_path):
+                # Переименовываем, если такой файл уже есть
+                base, ext = os.path.splitext(item)
+                counter = 1
+                while os.path.exists(dst_path):
+                    dst_path = os.path.join(target_folder, f"{base}_{counter}{ext}")
+                    counter += 1
+            shutil.copy2(src_path, dst_path)
 
 
 # if __name__ == '__main__':

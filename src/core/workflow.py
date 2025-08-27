@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from src.core import docx_tools, file_tools
@@ -11,10 +12,10 @@ from src.utils.templates_utils import (
     load_path_signa,
     load_zalog_contacts_template,
 )
-from src.utils.text_utils import get_case_number_from_filename, sanitize_filename
+from src.utils.text_utils import get_case_number_from_filename, get_number_obligation_from_foldername, sanitize_filename
 
 
-def form_package(folder_path: str, save_base_statement=False):
+def form_package(folder_path: str, save_base_statement=False, all_in_arbitter=False):
     """
     Формирование пакета документов по банкротству
     Архив + Заявление
@@ -39,7 +40,7 @@ def form_package(folder_path: str, save_base_statement=False):
 
         # Если выбрано сохранение исходного заявления
         if save_base_statement:
-            dst_path = current_path_doc.parent / f"Исходное заявление{current_path_doc.suffix}"
+            dst_path = current_path_doc.parent / f'Исходное заявление{current_path_doc.suffix}'
             file_tools.copy_file(current_path_doc, dst_path)
 
         # 4 Создать папку арбитражного дела
@@ -49,10 +50,22 @@ def form_package(folder_path: str, save_base_statement=False):
         # 5 Скопировать папки обязательств в папку арбитражного дела
         # Исключая папку арбитражного дела, если она уже существует
         paths_obligations = file_tools.find_folders_obligations(path_dossier)  # Поиск папок обязательств
-        for path_oblig in paths_obligations:
-            if path_oblig == path_arbitter:
-                continue
-            file_tools.copy_folder(path_oblig, path_arbitter)
+        if not all_in_arbitter:
+            for path_oblig in paths_obligations:
+                if path_oblig == path_arbitter:
+                    continue
+                file_tools.copy_folder(path_oblig, path_arbitter)
+        else:
+            for path_oblig in paths_obligations:
+                if path_oblig == path_arbitter:
+                    continue
+                folder_name = os.path.basename(path_oblig)
+                num_oblig = get_number_obligation_from_foldername(folder_name)
+
+                if num_oblig:
+                    file_tools.copy_contents_with_num(path_oblig, path_arbitter, num_oblig)
+                else:  # Если номер не найден, копируем папку целиком
+                    file_tools.copy_folder(path_oblig, path_arbitter)
 
         return current_path_doc, fio_debtor, case_number
 
@@ -81,7 +94,7 @@ def unpack_package_no_statement(folder_path: str):
         raise e
 
 
-def insert_statement(folder_path: str, path_dossier: str, save_base_statement=False):
+def insert_statement(folder_path: str, path_dossier: str, save_base_statement=False, all_in_arbitter=False):
     """
     Перемещение заявление в распакованный пакет документов по банкротству
     Архив без Заявления
@@ -102,7 +115,7 @@ def insert_statement(folder_path: str, path_dossier: str, save_base_statement=Fa
 
         # Если выбрано сохранение исходного заявления
         if save_base_statement:
-            dst_path = current_path_doc.parent / f"Исходное заявление{current_path_doc.suffix}"
+            dst_path = current_path_doc.parent / f'Исходное заявление{current_path_doc.suffix}'
             file_tools.copy_file(current_path_doc, dst_path)
 
         # 4 Создать папку арбитражного дела
@@ -112,10 +125,22 @@ def insert_statement(folder_path: str, path_dossier: str, save_base_statement=Fa
         # 5 Скопировать папки обязательств в папку арбитражного дела
         # Исключая папку арбитражного дела, если она уже существует
         paths_obligations = file_tools.find_folders_obligations(path_dossier)  # Поиск папок обязательств
-        for path_oblig in paths_obligations:
-            if path_oblig == path_arbitter:
-                continue
-            file_tools.copy_folder(path_oblig, path_arbitter)
+        if not all_in_arbitter:
+            for path_oblig in paths_obligations:
+                if path_oblig == path_arbitter:
+                    continue
+                file_tools.copy_folder(path_oblig, path_arbitter)
+        else:
+            for path_oblig in paths_obligations:
+                if path_oblig == path_arbitter:
+                    continue
+                folder_name = os.path.basename(path_oblig)
+                num_oblig = get_number_obligation_from_foldername(folder_name)
+
+                if num_oblig:
+                    file_tools.copy_contents_with_num(path_oblig, path_arbitter, num_oblig)
+                else:  # Если номер не найден, копируем папку целиком
+                    file_tools.copy_folder(path_oblig, path_arbitter)
 
         return current_path_doc, fio_debtor, case_number
 
@@ -144,13 +169,23 @@ def proccess_statement(path_doc: Path, bank, signa):
     # Удаление параграфов из документа
     del_paragraphs_obyaz = load_del_paragraphs_obyazatelstv()
     if del_paragraphs_obyaz:
-        _step('Удаление абзацев в Обязательствах', docx_tools.delete_paragraphs_in_obyazatelstvo, doc, del_paragraphs_obyaz)
+        _step(
+            'Удаление абзацев в Обязательствах',
+            docx_tools.delete_paragraphs_in_obyazatelstvo,
+            doc,
+            del_paragraphs_obyaz,
+        )
 
     # === Обработка части ПРОСИТ СУД ===
     # Удаление параграфов из документа
     del_paragraphs_gosposhlina = load_del_paragraphs_gosposhlina()
     if del_paragraphs_gosposhlina:
-        _step('Удаление пунктов в ПРОСИТ СУД', docx_tools.delete_paragraphs_in_gosposhlina, doc, del_paragraphs_gosposhlina)
+        _step(
+            'Удаление пунктов в ПРОСИТ СУД',
+            docx_tools.delete_paragraphs_in_gosposhlina,
+            doc,
+            del_paragraphs_gosposhlina,
+        )
 
     # Вставка шаблона госпошлины
     gosposhlina_temp = load_gosposhlina_template()
@@ -160,7 +195,9 @@ def proccess_statement(path_doc: Path, bank, signa):
     # === Обработка части Приложения ===
     del_paragraphs_appendices = load_del_paragraphs_appendices()
     if del_paragraphs_appendices:
-        _step('Удаление пунктов в Приложения', docx_tools.delete_paragraphs_in_appendices, doc, del_paragraphs_appendices)
+        _step(
+            'Удаление пунктов в Приложения', docx_tools.delete_paragraphs_in_appendices, doc, del_paragraphs_appendices
+        )
 
     # Форматирование списка приложений
     _step('Форматирование приложений', docx_tools.format_appendices, doc)

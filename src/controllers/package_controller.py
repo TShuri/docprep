@@ -55,10 +55,11 @@ class PackageController:
         if self.view.checkbox_base_statement.isChecked():
             save_base_statement = True
 
-        have_signa = self.view.radio_yes.isChecked()
+        have_signa = self.view.radio_yes.isChecked()  # Вставить подпись или нет
+        all_in_arbitter = self.view.checkbox_all_in_arbitter.isChecked() # Объединить все обязательства в одну папку
 
         try:  # Формируем пакет (распаковку)
-            self.current_path_doc, fio_debtor, case_number = form_package(folder, save_base_statement)
+            self.current_path_doc, fio_debtor, case_number = form_package(folder, save_base_statement, all_in_arbitter)
             self.view.set_current_case(f'{case_number} {fio_debtor}')
         except Exception as e:
             self.view.append_log(f'Ошибка формирования пакета: {e}')
@@ -111,10 +112,13 @@ class PackageController:
             save_base_statement = True
 
         have_signa = self.view.radio_yes.isChecked()
+        all_in_arbitter = self.view.checkbox_all_in_arbitter.isChecked() # Объединить все обязательства в одну папку
 
         self.view.reset()
-        try: # Формируем пакет
-            self.current_path_doc, fio_debtor, case_number = insert_statement(folder, self.current_path_dossier, save_base_statement)
+        try:  # Формируем пакет
+            self.current_path_doc, fio_debtor, case_number = insert_statement(
+                folder, self.current_path_dossier, save_base_statement, all_in_arbitter
+            )
             self.view.set_current_case(f'{case_number} {fio_debtor}')
         except Exception as e:
             self.view.append_log(f'Ошибка формирования пакета: {e}')

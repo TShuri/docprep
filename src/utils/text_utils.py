@@ -1,3 +1,7 @@
+import re
+from typing import Optional
+
+
 def sanitize_filename(name: str) -> str:
     """
     Заменяет недопустимые символы в имени файла.
@@ -26,3 +30,22 @@ def get_case_number_from_filename(filename: str) -> str:
         if '-' in part and '_' in part:
             return part
     return ''
+
+def get_number_obligation_from_foldername(foldername: str) -> Optional[str]:
+    """Извлекает номер обязательства из названия папки обязательства.
+    Возвращает None, если номер не найден или формат некорректный.
+    """
+    if not foldername:  # пустая строка или None
+        return None
+
+    parts = foldername.split()
+    if len(parts) < 3:
+        return None
+
+    candidate = parts[-3].strip()
+    # Проверка: есть ли хотя бы одна цифра
+    if re.search(r"\d", candidate):
+        return candidate
+
+    return None
+
