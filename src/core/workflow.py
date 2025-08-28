@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from src.core import docx_tools, file_tools
+from src.core import docx_tools, file_tools, pdf_tools
 from src.utils.templates_utils import (
     load_bank_requisites,
     load_del_paragraphs_appendices,
@@ -158,7 +158,6 @@ def proccess_statement(path_doc: Path, bank, signa):
             doc.save(path_doc)
         except Exception as e:
             raise RuntimeError(f'Ошибка шага "{step_name}": {e}') from e
-            # self.view.append_log(f'{step_name}: ошибка — {e}')
 
     # === Обработка Обязательств ===
     # Удаление слов из документа
@@ -218,3 +217,25 @@ def proccess_statement(path_doc: Path, bank, signa):
     if signa:
         path_signa = load_path_signa()
         _step('Вставка подписи', docx_tools.insert_signature, doc, path_signa)
+
+def check_docx_fields_in_pdf(path_docx: Path, path_pdf):
+    """
+    Проверяет, что данные из docx присутствуют в PDF:
+    - Номер дела
+    - ФИО должника
+    - ФИО финансового управляющего
+    - Дата решения
+    """
+    try:
+        doc = docx_tools.open_docx(path_docx)  # Открытие документа РТК
+        fio_debtor = docx_tools.extract_fio_debtor(doc)  # Извлечение ФИО должника
+        case_number = docx_tools.extract_case_number(doc)  # Извлечение номера дела
+        fields = {"fio_debtor": fio_debtor,
+                  "case_number": case_number,}
+    except Exception as e:
+            raise RuntimeError(f'Ошибка при извлечении данных с Заявления": {e}') from e
+    try:
+        result = pdf_tools.check_fields_in_pdf(fields, path_pdf)
+        return result
+    except Exception as e:
+        raise RuntimeError(f'Ошибка при проверке данных с pdf": {e}') from e
