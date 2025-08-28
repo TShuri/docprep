@@ -60,7 +60,11 @@ class PDFReaderTab(QWidget):
             allowed_exts=('.docx',),
             parent=self,
         )
+        self.text_log_zayavlenie = QTextEdit()
+        self.text_log_zayavlenie.setReadOnly(True)
+        self.text_log_zayavlenie.setPlaceholderText('Данные с Заявления')
         layout.addWidget(self.label_zayavlenie)
+        layout.addWidget(self.text_log_zayavlenie)
 
         # Нижний ряд: Публикация и Решение суда с логами
         grid = QGridLayout()
@@ -75,7 +79,7 @@ class PDFReaderTab(QWidget):
         )
         self.text_log_publikaciya = QTextEdit()
         self.text_log_publikaciya.setReadOnly(True)
-        self.text_log_publikaciya.setPlaceholderText('Логи Публикации')
+        self.text_log_publikaciya.setPlaceholderText('Данные с Публикации')
         left_layout.addWidget(self.label_publikaciya)
         left_layout.addWidget(self.text_log_publikaciya)
 
@@ -89,7 +93,7 @@ class PDFReaderTab(QWidget):
         )
         self.text_log_reshenie = QTextEdit()
         self.text_log_reshenie.setReadOnly(True)
-        self.text_log_reshenie.setPlaceholderText('Логи Решения суда')
+        self.text_log_reshenie.setPlaceholderText('Данные с Решения суда')
         right_layout.addWidget(self.label_reshenie)
         right_layout.addWidget(self.text_log_reshenie)
 
@@ -111,11 +115,14 @@ class PDFReaderTab(QWidget):
 
     def log(self, msg, key=None):
         """Вывод логов в соответствующее окно"""
-        if key == 'publikaciya':
+        if key == 'zayavlenie':
+            self.text_log_zayavlenie.append(msg)
+        elif key == 'publikaciya':
             self.text_log_publikaciya.append(msg)
         elif key == 'reshenie':
             self.text_log_reshenie.append(msg)
         else:
+            self.text_log_zayavlenie.append(msg)
             self.text_log_publikaciya.append(msg)
             self.text_log_reshenie.append(msg)
 
@@ -124,11 +131,14 @@ class PDFReaderTab(QWidget):
         Сбрасывает логи.
         :param key: "publikaciya", "reshenie" или None для обоих
         """
-        if key == 'publikaciya':
+        if key == 'zayavlenie':
+            self.text_log_zayavlenie.clear()
+        elif key == 'publikaciya':
             self.text_log_publikaciya.clear()
         elif key == 'reshenie':
             self.text_log_reshenie.clear()
-        else:  # Если key=None, очищаем оба лога
+        else:  # Если key=None, очищаем все логи
+            self.text_log_zayavlenie.clear()
             self.text_log_publikaciya.clear()
             self.text_log_reshenie.clear()
 

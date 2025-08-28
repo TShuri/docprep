@@ -80,23 +80,25 @@ def extract_case_number(doc: Document) -> Optional[str]:
 
     return None
 
+
 def extract_date(doc: Document) -> Optional[str]:
     """
-    Извлекает дату решения из параграфа, который идёт сразу после
+    Извлекает дату решения из параграфа, который идёт через
     параграфа с текстом 'о включении требований в реестр кредиторов'.
     Формат даты: dd.mm.yyyy
     """
-    target_text = "о включении требований в реестр кредиторов"
+    target_text = 'о включении требований в реестр кредиторов'
     date_pattern = r'\b(\d{2}\.\d{2}\.\d{4})\b'
 
     paragraphs = doc.paragraphs
-    for i, para in enumerate(paragraphs[:-1]):  # не смотрим последний параграф
+    for i, para in enumerate(paragraphs[:-2]):  # не смотрим последние 2 параграфа
         if target_text in para.text:
-            next_para_text = paragraphs[i + 1].text
+            next_para_text = paragraphs[i + 2].text
             match = re.search(date_pattern, next_para_text)
             if match:
                 return match.group(1)
     return None
+
 
 def delete_words_in_obyazatelstvo(doc: Document, targets: list[str]) -> None:
     """
@@ -244,7 +246,7 @@ def insert_gosposhlina(doc: Document, template: Document):
                             # Ищем позицию точки после цифры
                             dot_idx = r_text.find('.')
                             if dot_idx != -1:
-                                r_text = r_text[dot_idx + 1:]  # убираем цифру и точку
+                                r_text = r_text[dot_idx + 1 :]  # убираем цифру и точку
                                 first_run_skipped = True
                             else:
                                 # весь run игнорируем, если точка ещё не найдена
@@ -407,6 +409,7 @@ def get_bank_list(doc: Document) -> list[str]:
                 banks.append(bank_name)
     return banks
 
+
 def insert_signature(doc: Document, signa_path: Path):
     """
     Добавляет подпись в самый последний абзац документа и центрирует её.
@@ -415,10 +418,10 @@ def insert_signature(doc: Document, signa_path: Path):
     :param signa_path: Path - путь к картинке подписи
     :param width_cm: ширина подписи в сантиметрах (по умолчанию 5 см)
     """
-    last_paragraph = doc.paragraphs[-1] # Берём последний абзац
-    last_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER# Центрируем абзац
+    last_paragraph = doc.paragraphs[-1]  # Берём последний абзац
+    last_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER  # Центрируем абзац
 
-    run = last_paragraph.add_run() # Вставляем подпись
+    run = last_paragraph.add_run()  # Вставляем подпись
     run.add_picture(str(signa_path), width=Cm(3))
 
 

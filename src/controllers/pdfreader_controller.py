@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from src.core.workflow import check_docx_fields_in_publikaciya
 
 
@@ -20,6 +18,13 @@ class PDFReaderController:
         self.view.process_clicked.connect(self.handle_process_clicked)
         self.view.reset_clicked.connect(self.handle_reset_clicked)
 
+        self.field_names = {  # словарь соответствий ключей и человеко-читаемых названий
+            'fio_debtor': 'ФИО должника',
+            'fio_manager': 'ФИО финансового управляющего',
+            'case_number': 'Номер дела',
+            'date': 'Дата решения',
+        }
+
     def handle_process_clicked(self):
         """Сверка документов"""
         self.view.reset_log()
@@ -30,12 +35,13 @@ class PDFReaderController:
 
         # Проверка выбора файлов
         if not zayavlenie_path or not zayavlenie_path.lower().endswith('.docx'):
-            self.view.log('Не выбран файл заявления (.docx)')
+            self.view.log('Не выбран файл заявления (.docx)', 'zayavlenie')
             return
 
         if publikaciya_path:
-            res = check_docx_fields_in_publikaciya(zayavlenie_path, publikaciya_path)
-            self.print_result(res, 'publikaciya')
+            docx_info, pdf_info, result = check_docx_fields_in_publikaciya(zayavlenie_path, publikaciya_path)
+            self.print_docx_info(docx_info, 'zayavlenie')
+            self.print_result(pdf_info, result, 'publikaciya')
         else:
             self.view.log('PDF файл с публикацией не выбран', 'publikaciya')
 
@@ -54,20 +60,35 @@ class PDFReaderController:
         """Обновляем данные в контроллере по событию из UI"""
         self.files[key] = path
 
-    def print_result(self, result: dict, log):
+    def print_docx_info(self, info, log):
+        """
+        Выводит данные в лог.
+        """
+        for key, value in info.items():
+            name = self.field_names.get(key, key)  # если ключ неизвестен, оставляем как есть
+            if not value:
+                self.view.log(f'{name}: не найдено', log)
+            else:
+                self.view.log(f'{name}: {value}', log)
+
+    def print_result(self, info: dict, result: dict, log):
         """
         Выводит результат сверки в лог.
-        result: dict = {"fio_debtor": True/False, "case_number": True/False, ...}
+        info: dict = {'fio_debtor': value}
+        result: dict = {"fio_debtor": True/False/None, "case_number": True/False/None, ...}
         """
-        # словарь соответствий ключей и человеко-читаемых названий
-        field_names = {
-            "fio_debtor": "ФИО должника",
-            "fio_manager": "ФИО финансового управляющего",
-            "case_number": "Номер дела",
-            "date": "Дата решения",
-        }
-
         for key, found in result.items():
-            name = field_names.get(key, key)  # если ключ неизвестен, оставляем как есть
-            status = "✅ найдено" if found else "❌ не найдено"
-            self.view.log(f"{name}: {status}", log)
+            name = self.field_names.get(key, key)  # если ключ неизвестен, оставляем как есть
+            value = info.get(key, key)
+
+            if found is True:
+                status = '✅ совпадает'
+            elif found is False:
+                status = '❌ не совпадает'
+            elif not found and value is None:
+                status = '⚠️ не найдено'
+                value = ''
+            else:  # None
+                status = '⚠️ ошибка обработки'
+
+            self.view.log(f'{status}/{name}: {value}', log)

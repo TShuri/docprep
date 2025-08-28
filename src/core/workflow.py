@@ -232,22 +232,55 @@ def check_docx_fields_in_publikaciya(path_docx: Path, path_pdf):
     - ФИО финансового управляющего
     - Дата решения
     """
+    # Данные с заявления
     try:
+        docx_info = {}
         doc = docx_tools.open_docx(path_docx)  # Открытие документа РТК
-        fio_debtor = docx_tools.extract_fio_debtor(doc)  # Извлечение ФИО должника
-        fio_manager = docx_tools.extract_fio_financial_manager(doc)  # Извлечение ФИО финуправляющего
-        case_number = docx_tools.extract_case_number(doc)  # Извлечение номера дела
-        date = to_iso_date(docx_tools.extract_date(doc))
+        docx_info['fio_debtor'] = docx_tools.extract_fio_debtor(doc)  # Извлечение ФИО должника
+        docx_info['fio_manager'] = docx_tools.extract_fio_financial_manager(doc)  # Извлечение ФИО финуправляющего
+        docx_info['case_number'] = docx_tools.extract_case_number(doc)  # Извлечение номера дела
+        docx_info['date'] = docx_tools.extract_date(doc)
     except Exception as e:
         raise RuntimeError(f'Ошибка при извлечении данных с Заявления": {e}') from e
-    try:
-        text_pdf = pdf_tools.extract_text_from_pdf(path_pdf)
-        result = {
-            'fio_debtor': pdf_tools.find_debtor_in_publikatsiya(text_pdf, fio_debtor),
-            'fio_manager': pdf_tools.find_manager_in_publikatsiya(text_pdf, fio_manager),
-            'case_number': pdf_tools.find_case_in_publikatsiya(text_pdf, case_number),
-            'date': pdf_tools.find_date_in_publikatsiya(text_pdf, date)
-        }
-        return result
-    except Exception as e:
-        raise RuntimeError(f'Ошибка при проверке данных с pdf": {e}') from e
+
+    # Данные с публикации
+    text_pdf = pdf_tools.extract_text_from_pdf(path_pdf)
+    pdf_info = {}
+    try:  # Проверка ФИО должника
+        pdf_info['fio_debtor'] = pdf_tools.find_debtor_in_publikatsiya(text_pdf)
+    except Exception:
+        pdf_info['fio_debtor'] = None
+
+    try:  # Проверка ФИО финансового управляющего
+        pdf_info['fio_manager'] = pdf_tools.find_manager_in_publikatsiya(text_pdf)
+    except Exception:
+        pdf_info['fio_manager'] = None
+
+    try:  # Проверка номера дела
+        pdf_info['case_number'] = pdf_tools.find_case_in_publikatsiya(text_pdf)
+    except Exception:
+        pdf_info['case_number'] = None
+
+    try:  # Проверка даты решения
+        pdf_info['date'] = pdf_tools.find_date_in_publikatsiya(text_pdf)
+    except Exception:
+        pdf_info['date'] = None
+
+    # Сравнение данных из заявления и публикации
+    result = {}
+    for key in docx_info.keys():
+        docx_val = docx_info.get(key)
+        pdf_val = pdf_info.get(key)
+
+        if not docx_val or not pdf_val:
+            result[key] = None
+        else:
+            if key == 'date':
+                try:
+                    result[key] = to_iso_date(docx_val).lower() == pdf_val.lower()
+                except Exception:
+                    result[key] = None  # если дата не преобразовалась
+            else:
+                result[key] = docx_val.lower() == pdf_val.lower()
+
+    return docx_info, pdf_info, result
