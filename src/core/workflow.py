@@ -12,7 +12,12 @@ from src.utils.templates_utils import (
     load_path_signa,
     load_zalog_contacts_template,
 )
-from src.utils.text_utils import get_case_number_from_filename, get_number_obligation_from_foldername, sanitize_filename
+from src.utils.text_utils import (
+    get_case_number_from_filename,
+    get_number_obligation_from_foldername,
+    sanitize_filename,
+    to_iso_date,
+)
 
 
 def form_package(folder_path: str, save_base_statement=False, all_in_arbitter=False):
@@ -218,7 +223,8 @@ def proccess_statement(path_doc: Path, bank, signa):
         path_signa = load_path_signa()
         _step('Вставка подписи', docx_tools.insert_signature, doc, path_signa)
 
-def check_docx_fields_in_pdf(path_docx: Path, path_pdf):
+
+def check_docx_fields_in_publikaciya(path_docx: Path, path_pdf):
     """
     Проверяет, что данные из docx присутствуют в PDF:
     - Номер дела
@@ -229,13 +235,19 @@ def check_docx_fields_in_pdf(path_docx: Path, path_pdf):
     try:
         doc = docx_tools.open_docx(path_docx)  # Открытие документа РТК
         fio_debtor = docx_tools.extract_fio_debtor(doc)  # Извлечение ФИО должника
+        fio_manager = docx_tools.extract_fio_financial_manager(doc)  # Извлечение ФИО финуправляющего
         case_number = docx_tools.extract_case_number(doc)  # Извлечение номера дела
-        fields = {"fio_debtor": fio_debtor,
-                  "case_number": case_number,}
+        date = to_iso_date(docx_tools.extract_date(doc))
     except Exception as e:
-            raise RuntimeError(f'Ошибка при извлечении данных с Заявления": {e}') from e
+        raise RuntimeError(f'Ошибка при извлечении данных с Заявления": {e}') from e
     try:
-        result = pdf_tools.check_fields_in_pdf(fields, path_pdf)
+        text_pdf = pdf_tools.extract_text_from_pdf(path_pdf)
+        result = {
+            'fio_debtor': pdf_tools.find_debtor_in_publikatsiya(text_pdf, fio_debtor),
+            'fio_manager': pdf_tools.find_manager_in_publikatsiya(text_pdf, fio_manager),
+            'case_number': pdf_tools.find_case_in_publikatsiya(text_pdf, case_number),
+            'date': pdf_tools.find_date_in_publikatsiya(text_pdf, date)
+        }
         return result
     except Exception as e:
         raise RuntimeError(f'Ошибка при проверке данных с pdf": {e}') from e

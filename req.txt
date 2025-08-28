@@ -1,5 +1,6 @@
 rarfile
 python-docx
+PyMuPDF
 PyQt6
 
 pandas

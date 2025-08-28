@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.core.workflow import check_docx_fields_in_pdf
+from src.core.workflow import check_docx_fields_in_publikaciya
 
 
 class PDFReaderController:
@@ -34,14 +34,13 @@ class PDFReaderController:
             return
 
         if publikaciya_path:
-            res = check_docx_fields_in_pdf(zayavlenie_path, publikaciya_path)
+            res = check_docx_fields_in_publikaciya(zayavlenie_path, publikaciya_path)
             self.print_result(res, 'publikaciya')
         else:
             self.view.log('PDF файл с публикацией не выбран', 'publikaciya')
 
         if resh_path:
-            res = check_docx_fields_in_pdf(zayavlenie_path, resh_path)
-            self.print_result(res, 'reshenie')
+            pass
         else:
             self.view.log('PDF файл с решением суда не выбран', 'reshenie')
 
@@ -63,7 +62,7 @@ class PDFReaderController:
         # словарь соответствий ключей и человеко-читаемых названий
         field_names = {
             "fio_debtor": "ФИО должника",
-            "manager": "ФИО финансового управляющего",
+            "fio_manager": "ФИО финансового управляющего",
             "case_number": "Номер дела",
             "date": "Дата решения",
         }

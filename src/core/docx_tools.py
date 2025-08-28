@@ -60,12 +60,11 @@ def extract_fio_debtor(doc: Document) -> Optional[str]:
     return _extract_after_label(doc, 'Должник:')
 
 
-# def extract_fio_financial_manager(docx_path: Path) -> Optional[str]:
-#     """
-#     Извлечение ФИО фин. управляющего. Метка: 'Финансовый управляющий:'
-#     """
-#     doc = _open_docx(docx_path)
-#     return _extract_after_label(doc, 'Финансовый управляющий:')
+def extract_fio_financial_manager(doc: Document) -> Optional[str]:
+    """
+    Извлечение ФИО фин. управляющего. Метка: 'Финансовый управляющий:'
+    """
+    return _extract_after_label(doc, 'Финансовый управляющий:')
 
 
 def extract_case_number(doc: Document) -> Optional[str]:
@@ -81,6 +80,23 @@ def extract_case_number(doc: Document) -> Optional[str]:
 
     return None
 
+def extract_date(doc: Document) -> Optional[str]:
+    """
+    Извлекает дату решения из параграфа, который идёт сразу после
+    параграфа с текстом 'о включении требований в реестр кредиторов'.
+    Формат даты: dd.mm.yyyy
+    """
+    target_text = "о включении требований в реестр кредиторов"
+    date_pattern = r'\b(\d{2}\.\d{2}\.\d{4})\b'
+
+    paragraphs = doc.paragraphs
+    for i, para in enumerate(paragraphs[:-1]):  # не смотрим последний параграф
+        if target_text in para.text:
+            next_para_text = paragraphs[i + 1].text
+            match = re.search(date_pattern, next_para_text)
+            if match:
+                return match.group(1)
+    return None
 
 def delete_words_in_obyazatelstvo(doc: Document, targets: list[str]) -> None:
     """
@@ -432,13 +448,14 @@ def insert_zalog_contacts(doc: Document, template: Document):
 
 # if __name__ == '__main__':
 #     mock_doc = 'mock\заявление на включение требований в РТК_2rsfdofiswdf.docx.docx'
-#     signa_path = 'templates/signa.png'
+#     # signa_path = 'templates/signa.png'
 #     # temp_add_gp = 'templates/gosposhlina/add_gosposhlina.docx'
 #     save_output_mock = 'mock/output.docx'
 #     try:
 #         doc = open_docx(mock_doc)
+#         print(extract_date(doc))
 #         # template = open_docx(temp_add_gp)
-#         insert_signature(doc, signa_path)
+#         # insert_signature(doc, signa_path)
 #         doc.save(save_output_mock)
 #     except Exception as e:
 #         print(f'Ошибка: {e}')
