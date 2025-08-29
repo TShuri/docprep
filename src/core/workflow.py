@@ -268,6 +268,7 @@ def check_docx_fields_in_publikaciya(path_docx: Path, path_pdf):
 
     # Сравнение данных из заявления и публикации
     result = {}
+
     for key in docx_info.keys():
         docx_val = docx_info.get(key)
         pdf_val = pdf_info.get(key)

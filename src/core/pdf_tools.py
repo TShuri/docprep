@@ -1,3 +1,5 @@
+import re
+
 import fitz  # PyMuPDF
 
 
@@ -37,7 +39,9 @@ def find_manager_in_publikatsiya(text_pdf: str):
     for i, para in enumerate(paragraphs[:-1]):  # кроме последнего
         if 'управляющий' in para:
             next_para = paragraphs[i + 1]
-            return next_para
+
+            fio = next_para.split("(", 1)[0].strip() # Убираем лишнее в строке
+            return fio if fio else None
 
     return None
 
@@ -56,15 +60,28 @@ def find_case_in_publikatsiya(text_pdf: str):
     return None
 
 
-def find_date_in_publikatsiya(text_pdf: str):
+def find_date_in_publikatsiya(text_pdf: str) -> str | None:
     """
-    Ищет дату решения в тексте PDF и возвращает.
+    Ищет дату решения в тексте PDF.
+    Дата ищется в блоке текста между абзацами:
+      "Публикуемые сведения"  и  "Текст:".
+    Формат даты: YYYY-MM-DD.
     """
     paragraphs = [p.strip() for p in text_pdf.split('\n') if p.strip()]
 
-    for i, para in enumerate(paragraphs[:-3]):  # кроме последнего
-        if 'Дата решения' in para:
-            next_para = paragraphs[i + 3]
-            return next_para
+    try:
+        start_idx = next(i for i, p in enumerate(paragraphs) if 'Публикуемые сведения' in p)
+        end_idx = next(i for i, p in enumerate(paragraphs) if 'Текст:' in p)
+    except StopIteration:
+        return None  # если не нашли границы блока
+
+    block = paragraphs[start_idx:end_idx]
+
+    # Ищем дату по регулярке
+    date_pattern = re.compile(r'\d{4}-\d{2}-\d{2}')
+    for para in block:
+        match = date_pattern.search(para)
+        if match:
+            return match.group(0)
 
     return None
