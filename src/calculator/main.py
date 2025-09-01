@@ -1,6 +1,8 @@
 import os
 import sys
+from pathlib import Path
 
+from openpyxl import load_workbook
 from PyQt6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -166,10 +168,27 @@ class CalculatorWindow(QWidget):
         self.totals_layout.addWidget(label_plus_zalog, row, 0)
         self.totals_layout.addLayout(h_layout, row, 1)
 
+    def resave(self):
+        """
+        Пересохраняет файлы Excel (убирает вычисляемые формулы, пересобирает структуру).
+        """
+        for file in self.files:
+            try:
+                wb = load_workbook(file, data_only=True)
+                wb.save(file)
+            except Exception as e:
+                self.append_text(f'<b>Ошибка при пересохранении файла {Path(file).name}: {e}</b>')
+            finally:
+                try:
+                    wb.close()
+                except Exception:
+                    pass
+        self.append_text('<b>Файлы пересохранены</b>')
+
     def on_run(self):
         """Запуск обработки"""
         if not self.files:
-            QMessageBox.warning(self, 'Ошибка', 'Пожалуйста, выберите файлы для расчета.')
+            QMessageBox.warning(self, '<b>Ошибка', 'Пожалуйста, выберите файлы для расчета.</b>')
             return
         self.append_text('\nРасчет ...')
 
@@ -209,6 +228,8 @@ class CalculatorWindow(QWidget):
         self.btn_plus_zalog = QPushButton('Прибавить к Госпошлине залог 25 тыс.')
         self.totals_layout.addWidget(self.btn_plus_zalog, row, 0, 1, 2)
         self.btn_plus_zalog.clicked.connect(lambda: self.add_zalog(gosposhlina, row))
+
+        self.resave()
 
 
 if __name__ == '__main__':
