@@ -19,6 +19,7 @@ from PyQt6.QtWidgets import (
 )
 
 from src.calculator.logic import Logic
+from src.utils.settings_utils import load_resave_rci
 
 
 class CalculatorWindow(QWidget):
@@ -172,18 +173,19 @@ class CalculatorWindow(QWidget):
         """
         Пересохраняет файлы Excel (убирает вычисляемые формулы, пересобирает структуру).
         """
-        for file in self.files:
-            try:
-                wb = load_workbook(file, data_only=True)
-                wb.save(file)
-            except Exception as e:
-                self.append_text(f'<b>Ошибка при пересохранении файла {Path(file).name}: {e}</b>')
-            finally:
+        if load_resave_rci():
+            for file in self.files:
                 try:
-                    wb.close()
-                except Exception:
-                    pass
-        self.append_text('<b>Файлы пересохранены</b>')
+                    wb = load_workbook(file, data_only=True)
+                    wb.save(file)
+                except Exception as e:
+                    self.append_text(f'<b>Ошибка при пересохранении файла {Path(file).name}: {e}</b>')
+                finally:
+                    try:
+                        wb.close()
+                    except Exception:
+                        pass
+            self.append_text('<b>Файлы пересохранены</b>')
 
     def on_run(self):
         """Запуск обработки"""

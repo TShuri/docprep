@@ -1,5 +1,6 @@
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
+    QCheckBox,
     QGridLayout,
     QGroupBox,
     QLabel,
@@ -47,11 +48,23 @@ class SettingsTab(QWidget):
         group1.setLayout(grid1)
         main_layout.addWidget(group1)
 
-        # == Кнопка "Применить настройки" ==
-        # self.btn_apply = QPushButton('Применить настройки')
-        # self.btn_apply.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        # self.btn_apply.clicked.connect(lambda: self.aplly_settings_clicked.emit())
-        # main_layout.addWidget(self.btn_apply)
+        # === Группа "Калькулятор" ===
+        group2 = QGroupBox('Калькулятор РЦИ')
+        grid2 = QGridLayout()
+
+        # Чекбокс "Автосохранение РЦИ"
+        self.checkbox_resave_rci = QCheckBox('Пересохранять файлы РЦИ после расчета')
+        grid2.addWidget(self.checkbox_resave_rci, 0, 0)
+
+        group2.setLayout(grid2)
+        main_layout.addWidget(group2)
+
+        # == Кнопка "Перезапустить программу" ==
+        self.btn_apply = QPushButton('Перезапустить программу')
+
+        self.btn_apply.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.btn_apply.clicked.connect(lambda: self.aplly_settings_clicked.emit())
+        main_layout.addWidget(self.btn_apply)
 
         # == Спейсер, чтобы прижать группу к верху ==
         main_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
