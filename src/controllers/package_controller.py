@@ -2,7 +2,7 @@ from pathlib import Path
 
 from src.core import docx_tools
 from src.core.workflow import form_package, insert_statement, proccess_statement, unpack_package_no_statement
-from src.utils.settings_utils import load_work_directory
+from src.utils.settings_utils import load_all_in_arbitter, load_work_directory, save_all_in_arbitter
 from src.utils.templates_utils import load_bank_requisites, load_path_signa
 
 
@@ -15,6 +15,7 @@ class PackageController:
         self.view.unpack_clicked.connect(self.handle_unpack_clicked)
         self.view.insert_clicked.connect(self.handle_insert_clicked)
         self.view.reset_clicked.connect(self.handle_reset_clicked)
+        self.view.checkbox_all_in_arbitter.stateChanged.connect(self.handle_all_in_arbitter_clicked)
 
         # Инициализация необходимых параметров
         self.current_path_doc = None  # Путь к документу РТК
@@ -22,6 +23,7 @@ class PackageController:
         self.have_bank_requisites = False  # Флаг наличия реквизитов банков
         self.update_bank_requisites()
         self.check_signa()
+        self._load_setting_all_in_arbitter()
 
     def handle_checkbox_no_statement(self, state):
         enabled = state == 0  # 0 = unchecked, 2 = checked
@@ -133,12 +135,22 @@ class PackageController:
 
         self.view.reset_bank()
 
+    def handle_all_in_arbitter_clicked(self):
+        """Объединить содержимое папок всех обязательств в одну папку"""
+        value = self.view.checkbox_all_in_arbitter.isChecked()
+        save_all_in_arbitter(value)
+
     def handle_reset_clicked(self):
         """Сбросить"""
         self.view.reset_bank()
         self.view.reset()
         self.current_path_doc = None
         self.current_path_dossier = None
+
+    def _load_setting_all_in_arbitter(self):
+        value = load_all_in_arbitter()
+        if value:
+            self.view.checkbox_all_in_arbitter.setChecked(value)
 
     def update_bank_requisites(self):
         """Подгружает список банков при первоначальном запуске"""

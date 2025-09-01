@@ -80,9 +80,25 @@ def save_resave_rci(value: bool) -> None:
 def load_resave_rci() -> bool | None:
     """
     Загружает флаг 'Пересохранение РЦИ' из settings.json.
-    Возвращает Path, если путь задан и существует на диске, иначе None.
+    Возвращает False, если настройка не существует.
     """
     value = get_setting('resave_rci')
+    if not value:
+        return False
+
+    return value
+
+# Объединить содержимое папок всех обязательств в одну папку
+def save_all_in_arbitter(value: bool) -> None:
+    """Сохраняет в настройках Объединить содержимое папок всех обязательств в одну папку"""
+    set_setting('all_in_arbitter', value)
+
+def load_all_in_arbitter() -> bool | None:
+    """
+    Загружает флаг 'Объединить содержимое папок всех обязательств в одну' из settings.json.
+    Возвращает False, если настройка не существует.
+    """
+    value = get_setting('all_in_arbitter')
     if not value:
         return False
 
