@@ -1,4 +1,5 @@
 import os
+import traceback
 
 import pandas as pd
 from openpyxl import load_workbook
@@ -114,44 +115,32 @@ class Logic:
             return
 
         words = text.split()
-        formatted_parts = []
+        text_parts = []
 
         i = 0
         while i < len(words):
-            # Проверка фразы "по состоянию на"
-            if i + 2 < len(words):
-                phrase = f'{words[i].lower()} {words[i + 1].lower()} {words[i + 2].lower()}'
-                if phrase == 'по состоянию на':
-                    # Выделяем саму фразу
-                    formatted_parts.append(f'<b>{words[i]} {words[i + 1]} {words[i + 2]}</b>')
-
-                    # Слово после фразы
-                    if i + 3 < len(words):
-                        formatted_parts.append(f'<b>{words[i + 3]}</b>')
-                        i += 4
-                        continue
-                    else:
-                        i += 3
-                        continue
-
-            # Проверка слова перед '('
-            if '(' in words[i] and i > 0:
-                formatted_parts[-1] = f'<b>{formatted_parts[-1]}</b>'
-
-            # Обычное слово
-            formatted_parts.append(words[i])
-            i += 1
+            if (i + 1 < len(words)) and ('(' in words[i + 1]):
+                text_parts.append(f'<b><u>{words[i]}</u></b>')
+                i += 1
+            elif ((i + 3) < len(words)) and (
+                f'{words[i].lower()} {words[i + 1].lower()} {words[i + 2].lower()}' == 'по состоянию на'
+            ):
+                text_parts.append(f'<b><u>{words[i]} {words[i + 1]} {words[i + 2]} {words[i + 3]}</u></b>')
+                i += 3
+            else:
+                text_parts.append(words[i])
+                i += 1
 
         # Собираем текст обратно
-        formatted_text = ' '.join(formatted_parts)
-        self.output.append(formatted_text)
+        formatted_text = ' '.join(text_parts)
+        self.output(f'{formatted_text}')
 
     # --- Основная функция для расчета кредитной карты ---
     def run(self, event=None, files=None):
         self.clear_list_and_frame()
         for idx, file in enumerate(files, start=1):
             try:
-                self.output(f'\n[{idx}] Обязательство: \n{os.path.basename(file)}\n')
+                self.output(f'\n[{idx}] Обязательство\n')
                 try:
                     wb = load_workbook(file, data_only=True)
                 except:
@@ -633,7 +622,7 @@ class Logic:
                         self.temp.clear()
                     break
             except Exception as e:
-                self.output(f'<b>Ошибка при обработке файла {os.path.basename(file)}</b>')
+                self.output(f'<b>Ошибка при обработке файла {os.path.basename(file)} {e}\n{traceback.format_exc()}</b>')
                 continue
 
         rcy = sum(self.su)

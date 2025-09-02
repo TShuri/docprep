@@ -1,3 +1,4 @@
+import traceback
 from pathlib import Path
 
 from src.core import docx_tools
@@ -58,13 +59,13 @@ class PackageController:
             save_base_statement = True
 
         have_signa = self.view.radio_yes.isChecked()  # Вставить подпись или нет
-        all_in_arbitter = self.view.checkbox_all_in_arbitter.isChecked() # Объединить все обязательства в одну папку
+        all_in_arbitter = self.view.checkbox_all_in_arbitter.isChecked()  # Объединить все обязательства в одну папку
 
         try:  # Формируем пакет (распаковку)
             self.current_path_doc, fio_debtor, case_number = form_package(folder, save_base_statement, all_in_arbitter)
             self.view.set_current_case(f'{case_number} {fio_debtor}')
         except Exception as e:
-            self.view.append_log(f'Ошибка формирования пакета: {e}')
+            self.view.append_log(f'Ошибка формирования пакета: {e}\n{traceback.format_exc()}')
             return
 
         if self.current_path_doc:
@@ -72,7 +73,9 @@ class PackageController:
                 proccess_statement(self.current_path_doc, selected_bank, have_signa)
                 self.view.append_log('Пакет документов сформирован.')
             except Exception as e:
-                self.view.append_log(f'Пакет документов сформирован без обработки заявления: {e}')
+                self.view.append_log(
+                    f'Пакет документов сформирован без обработки заявления: {e}\n{traceback.format_exc()}'
+                )
 
         self.view.reset_bank()
 
@@ -91,7 +94,7 @@ class PackageController:
             self.view.set_current_case(f'{case_number} без заявления')
             self.view.append_log('Архив документов распакован')
         except Exception as e:
-            self.view.append_log(f'Ошибка формирования пакета: {e}')
+            self.view.append_log(f'Ошибка формирования пакета: {e}\n{traceback.format_exc()}')
             return
 
     def handle_insert_clicked(self):
@@ -114,7 +117,7 @@ class PackageController:
             save_base_statement = True
 
         have_signa = self.view.radio_yes.isChecked()
-        all_in_arbitter = self.view.checkbox_all_in_arbitter.isChecked() # Объединить все обязательства в одну папку
+        all_in_arbitter = self.view.checkbox_all_in_arbitter.isChecked()  # Объединить все обязательства в одну папку
 
         self.view.reset()
         try:  # Формируем пакет
@@ -123,7 +126,7 @@ class PackageController:
             )
             self.view.set_current_case(f'{case_number} {fio_debtor}')
         except Exception as e:
-            self.view.append_log(f'Ошибка формирования пакета: {e}')
+            self.view.append_log(f'Ошибка формирования пакета: {e}\n{traceback.format_exc()}')
             return
 
         if self.current_path_doc:
@@ -131,7 +134,9 @@ class PackageController:
                 proccess_statement(self.current_path_doc, selected_bank, have_signa)
                 self.view.append_log('Пакет документов сформирован.')
             except Exception as e:
-                self.view.append_log(f'Пакет документов сформирован без обработки заявления: {e}')
+                self.view.append_log(
+                    f'Пакет документов сформирован без обработки заявления: {e}\n{traceback.format_exc()}'
+                )
 
         self.view.reset_bank()
 
