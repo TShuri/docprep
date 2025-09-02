@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
 import src.core.calculator.utils as rci_utils
 from src.core.calculator.logic import Logic
-from src.utils.settings_utils import load_resave_rci
+from src.utils.settings_utils import load_resave_rci, load_show_btn_resave
 
 
 class CalculatorController:
@@ -18,6 +18,7 @@ class CalculatorController:
 
         self.logic = Logic(output_func=self.view.append_text, ask_gp_callback=self.view.ask_gp_callback)
         self.files = []  # список для хранения выбранных файлов
+        self.show_btn_resave()
 
     def handle_files_dropped(self, paths: list[str]):
         new_files = []
@@ -70,3 +71,8 @@ class CalculatorController:
     def handle_resave(self):
         logs = rci_utils.resave_files(self.files)
         self.view.append_text(logs)
+
+    def show_btn_resave(self):
+        value = load_show_btn_resave()
+        if value is False or value is None:
+            self.view.btn_resave.hide()

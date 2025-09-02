@@ -4,7 +4,14 @@ from pathlib import Path
 
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
-from src.utils.settings_utils import load_resave_rci, load_work_directory, save_resave_rci, save_work_directory
+from src.utils.settings_utils import (
+    load_resave_rci,
+    load_show_btn_resave,
+    load_work_directory,
+    save_resave_rci,
+    save_show_btn_resave,
+    save_work_directory,
+)
 
 
 class SettingsController:
@@ -19,6 +26,7 @@ class SettingsController:
         self.view.browse_clicked.connect(self.handle_browse_work_dir_clicked)
         self.view.aplly_settings_clicked.connect(self.handle_apply_settings_clicked)
         self.view.checkbox_resave_rci.stateChanged.connect(self.handle_resave_rci_clicked)
+        self.view.checkbox_show_btn_resave.stateChanged.connect(self.handle_show_btn_resave_clicked)
 
         self._load_settings()  # Инициализация рабочего пути
 
@@ -50,6 +58,14 @@ class SettingsController:
         value = self.view.checkbox_resave_rci.isChecked()
         save_resave_rci(value)
 
+    def handle_show_btn_resave_clicked(self):
+        """Показать кнопку Пересохранять файлы"""
+        value = self.view.checkbox_show_btn_resave.isChecked()
+        save_show_btn_resave(value)
+        QMessageBox.information(
+            self.view, 'Настройки сохранены', 'Чтобы настройка применилась необходимо перезапустить программу'
+        )
+
     def handle_apply_settings_clicked(self):
         """Применить настройки"""
         python = sys.executable
@@ -59,6 +75,7 @@ class SettingsController:
         """Подгрузка настроек при запуске программы"""
         self._load_work_directory()
         self._load_resave_rci()
+        self._load_show_btn_resave()
 
     def _load_work_directory(self) -> str | None:
         folder_path = load_work_directory()
@@ -68,5 +85,13 @@ class SettingsController:
     def _load_resave_rci(self):
         value = load_resave_rci()
         if value:
+            self.view.checkbox_resave_rci.blockSignals(True)
             self.view.checkbox_resave_rci.setChecked(value)
+            self.view.checkbox_resave_rci.blockSignals(False)
 
+    def _load_show_btn_resave(self):
+        value = load_show_btn_resave()
+        if value:
+            self.view.checkbox_show_btn_resave.blockSignals(True)
+            self.view.checkbox_show_btn_resave.setChecked(value)
+            self.view.checkbox_show_btn_resave.blockSignals(False)

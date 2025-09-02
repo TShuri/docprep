@@ -56,6 +56,9 @@ class SettingsTab(QWidget):
         self.checkbox_resave_rci = QCheckBox('Пересохранять файлы РЦИ после расчета')
         grid2.addWidget(self.checkbox_resave_rci, 0, 0)
 
+        self.checkbox_show_btn_resave = QCheckBox('Показать кнопку Пересохранять файлы')
+        grid2.addWidget(self.checkbox_show_btn_resave, 1, 0)
+
         group2.setLayout(grid2)
         main_layout.addWidget(group2)
 

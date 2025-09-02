@@ -88,6 +88,26 @@ def load_resave_rci() -> bool | None:
 
     return value
 
+
+
+# Показать кнопку Пересохраненить файлы
+def save_show_btn_resave(value: bool) -> None:
+    """Сохраняет в настройках 'Показать кнопку Пересохранить файлы'"""
+    set_setting('show_btn_resave', value)
+
+
+def load_show_btn_resave() -> bool | None:
+    """
+    Загружает флаг 'Показать кнопку Пересохранить файлы' из settings.json.
+    Возвращает False, если настройка не существует.
+    """
+    value = get_setting('show_btn_resave')
+    if not value:
+        return False
+
+    return value
+
+
 # Объединить содержимое папок всех обязательств в одну папку
 def save_all_in_arbitter(value: bool) -> None:
     """Сохраняет в настройках Объединить содержимое папок всех обязательств в одну папку"""
