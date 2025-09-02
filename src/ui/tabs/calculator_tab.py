@@ -22,6 +22,7 @@ class CalculatorTab(QWidget):
     select_files_clicked = pyqtSignal()
     calculate_clicked = pyqtSignal()
     reset_clicked = pyqtSignal()
+    resave_clicked = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -62,6 +63,10 @@ class CalculatorTab(QWidget):
         self.btn_reset.clicked.connect(self.reset_clicked.emit)
         layout.addWidget(self.btn_reset)
 
+        self.btn_resave = QPushButton('Пересохранить файлы', self)
+        self.btn_resave.clicked.connect(self.resave_clicked.emit)
+        layout.addWidget(self.btn_resave)
+
         self.text_output = QTextEdit()
         self.text_output.setReadOnly(True)
         self.text_output.setPlaceholderText('Перетащите сюда файлы Excel или выберите их кнопкой Выбрать файлы')
@@ -86,9 +91,10 @@ class CalculatorTab(QWidget):
         self._clear_totals()
         self._recreate_totals_group()
 
-    def print_select_files(self, unique_new_files, start_index):
+    def print_select_files(self, files):
         """Выводит список файлов"""
-        for i, f in enumerate(unique_new_files, start=start_index):
+        self.reset()
+        for i, f in enumerate(files, start=1):
             self.append_text(f'[{i}] {os.path.basename(f)}')
 
     def ask_gp_callback(self, msg):

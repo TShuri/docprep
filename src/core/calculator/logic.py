@@ -127,6 +127,7 @@ class Logic:
             ):
                 text_parts.append(f'<b><u>{words[i]} {words[i + 1]} {words[i + 2]} {words[i + 3]}</u></b>')
                 i += 3
+                break
             else:
                 text_parts.append(words[i])
                 i += 1
@@ -248,19 +249,19 @@ class Logic:
                                         val = float(val.replace(',', '.'))
                                     if val > 0:  # не убирай if
                                         msg = f'{ws["a5"].value[20:]}'
-                                        self.output('Учесть госпошлину при расчетах?')
+                                        # self.output('Учесть госпошлину при расчетах?')
                                         res = self.ask_into_gp(msg=msg)
                                         if res == 'yes':
                                             if val > 0:  # не убирай if
                                                 self.gp.append(val)
                                                 self.temp.append(val)
                                                 self.su.append(val)
-                                                self.output(f'Госпошлина в сумме {val} посчитана')
+                                                self.output(f'<b><u>Госпошлина в сумме {val} посчитана!</u></b>')
                                                 self.output('')
                                                 continue
                                         else:
                                             if val > 0:  # не убирай if
-                                                self.output(f'Госпошлина в сумме {val} не посчитана')
+                                                self.output(f'<b><u>Госпошлина в сумме {val} не посчитана!</u></b>')
                                                 self.output('')
                                                 continue
 
@@ -270,19 +271,19 @@ class Logic:
                                         val = float(val.replace(',', '.'))
                                     if val > 0:  # не убирай if
                                         msg = f'{ws["a5"].value[20:]}'
-                                        self.output('Учесть госпошлину при расчетах?')
+                                        # self.output('Учесть госпошлину при расчетах?')
                                         res = self.ask_into_gp(msg=msg)
                                         if res == 'yes':
                                             if val > 0:  # не убирай if
                                                 self.gp.append(val)
                                                 self.temp.append(val)
                                                 self.su.append(val)
-                                                self.output(f'Госпошлина в сумме {val} посчитана')
+                                                self.output(f'<b><u>Госпошлина в сумме {val} посчитана!</u></b>')
                                                 self.output('')
                                                 continue
                                         else:
                                             if val > 0:  # не убирай if
-                                                self.output(f'Госпошлина в сумме {val} не посчитана')
+                                                self.output(f'<b><u>Госпошлина в сумме {val} не посчитана!</u></b>')
                                                 self.output('')
                                                 continue
 
@@ -292,19 +293,19 @@ class Logic:
                                         val = float(val.replace(',', '.'))
                                     if val > 0:  # не убирай if
                                         msg = f'{ws["a2"].value[20:]}'
-                                        self.output('Учесть госпошлину при расчетах?')
+                                        # self.output('Учесть госпошлину при расчетах?')
                                         res = self.ask_into_gp(msg=msg)
                                         if res == 'yes':
                                             if val > 0:  # не убирай if
                                                 self.gp.append(val)
                                                 self.temp.append(val)
                                                 self.su.append(val)
-                                                self.output(f'Госпошлина в сумме {val} посчитана')
+                                                self.output(f'<b><u>Госпошлина в сумме {val} посчитана!</u></b>')
                                                 self.output('')
                                                 continue
                                         else:
                                             if val > 0:  # не убирай if
-                                                self.output(f'Госпошлина в сумме {val} не посчитана')
+                                                self.output(f'<b><u>Госпошлина в сумме {val} не посчитана!</u></b>')
                                                 self.output('')
                                                 continue
 
@@ -365,17 +366,17 @@ class Logic:
                             try:
                                 if 'по госпошлине' in ws[row][0].value:
                                     msg = f'{ws["a5"].value[20:]}'
-                                    self.output('Учесть госпошлину при расчетах?')
+                                    # self.output('Учесть госпошлину при расчетах?')
                                     res = self.ask_into_gp(msg=msg)
                                     if res == 'yes':
                                         self.gp.append(ws[row][8].value)
                                         self.temp.append(ws[row][8].value)
                                         self.su.append(ws[row][8].value)
-                                        self.output(f'Госпошлина в сумме {ws[row][8].value} посчитана')
+                                        self.output(f'<b><u>Госпошлина в сумме {ws[row][8].value} посчитана!</u></b>')
                                         self.output('')
                                         continue
                                     else:
-                                        self.output(f'Госпошлина в сумме {ws[row][8].value} не посчитана')
+                                        self.output(f'<b><u>Госпошлина в сумме {ws[row][8].value} не посчитана!</u></b>')
                                         self.output('')
                                         continue
                                 if 'Проценты за кредит ' in ws[row][0].value and ws[row][7].value != None:
@@ -495,7 +496,7 @@ class Logic:
                             ):
                                 if ws[row][8].value > 0:
                                     msg = f'{ws["a5"].value[20:]}'
-                                    self.output('Учесть госпошлину при расчетах?')
+                                    # self.output('Учесть госпошлину при расчетах?')
                                     res = self.ask_into_gp(msg=msg)
 
                                     try:
@@ -503,26 +504,26 @@ class Logic:
                                             self.gp.append(ws[row][1].value)
                                             self.temp.append(ws[row][1].value)
                                             self.su.append(ws[row][1].value)
-                                            self.output(f'Госпошлина в сумме {ws[row][1].value} посчитана')
+                                            self.output(f'<b><u>Госпошлина в сумме {ws[row][1].value} посчитана!</u></b>')
                                             self.output('')
                                         else:
-                                            self.output(f'Госпошлина в сумме {ws[row][1].value} не посчитана')
+                                            self.output(f'<b><u>Госпошлина в сумме {ws[row][1].value} не посчитана!</u></b>')
                                             self.output('')
                                             continue
                                     except TypeError:
                                         if ws[row][7].value > 0:
                                             msg = f'{ws["a5"].value[20:]}'
-                                            self.output('Учесть госпошлину при расчетах?')
+                                            # self.output('Учесть госпошлину при расчетах?')
                                             res = self.ask_into_gp(msg=msg)
 
                                             if res == 'yes':
                                                 self.gp.append(ws[row][7].value)
                                                 self.temp.append(ws[row][7].value)
                                                 self.su.append(ws[row][7].value)
-                                                self.output(f'Госпошлина в сумме {ws[row][7].value} посчитана')
+                                                self.output(f'<b><u>Госпошлина в сумме {ws[row][7].value} посчитана!</u></b>')
                                                 self.output('')
                                             else:
-                                                self.output(f'Госпошлина в сумме {ws[row][7].value} не посчитана')
+                                                self.output(f'<b><u>Госпошлина в сумме {ws[row][7].value} не посчитана!</u></b>')
                                                 self.output('')
 
                         y = sum(set(self.temp))

@@ -14,6 +14,7 @@ class CalculatorController:
         self.view.select_files_clicked.connect(self.handle_select_files)
         self.view.calculate_clicked.connect(self.handle_calculate)
         self.view.reset_clicked.connect(self.handle_reset)
+        self.view.resave_clicked.connect(self.handle_resave)
 
         self.logic = Logic(output_func=self.view.append_text, ask_gp_callback=self.view.ask_gp_callback)
         self.files = []  # список для хранения выбранных файлов
@@ -35,21 +36,20 @@ class CalculatorController:
         unique_new_files = [f for f in new_files if os.path.basename(f) not in existing_names]
 
         if unique_new_files:
-            start_index = len(self.files) + 1
-            self.view.print_select_files(unique_new_files, start_index)
             self.files.extend(unique_new_files)
+            self.view.print_select_files(self.files)
 
     def handle_select_files(self):
         files, _ = QFileDialog.getOpenFileNames(self.view, 'Выберите файлы Excel', '', 'Excel Files (*.xlsx)')
         if files:
             unique_new_files = [f for f in files if f not in self.files]
             if unique_new_files:
-                start_index = len(self.files) + 1  # начинаем нумерацию с текущего количества файлов + 1
-                self.view.print_select_files(unique_new_files, start_index)
                 self.files.extend(unique_new_files)
+                self.view.print_select_files(self.files)
 
     def handle_calculate(self):
         self.view.reset()
+        self.view.print_select_files(self.files)
 
         if not self.files:
             QMessageBox.warning(self.view, 'Ошибка', 'Пожалуйста, выберите файлы для расчета.')
@@ -66,3 +66,7 @@ class CalculatorController:
     def handle_reset(self):
         self.files = []
         self.view.reset()
+
+    def handle_resave(self):
+        logs = rci_utils.resave_files(self.files)
+        self.view.append_text(logs)
