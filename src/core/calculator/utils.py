@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import pandas as pd
 from openpyxl import load_workbook
 
 
@@ -21,7 +20,4 @@ def resave_files(files):
             except Exception:
                 pass
     logs.append('<b>Все файлы пересохранены</b>')
-    return "\n".join(logs)
-
-
-
+    return '\n'.join(logs)

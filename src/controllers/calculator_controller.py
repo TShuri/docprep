@@ -1,7 +1,5 @@
 import os
-from pathlib import Path
 
-from openpyxl import load_workbook
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
 import src.core.calculator.utils as rci_utils
@@ -12,10 +10,10 @@ from src.utils.settings_utils import load_resave_rci
 class CalculatorController:
     def __init__(self, view):
         self.view = view
+        self.view.files_dropped.connect(self.handle_files_dropped)  # <-- drag&drop
         self.view.select_files_clicked.connect(self.handle_select_files)
         self.view.calculate_clicked.connect(self.handle_calculate)
         self.view.reset_clicked.connect(self.handle_reset)
-        self.view.files_dropped.connect(self.handle_files_dropped)  # <-- drag&drop
 
         self.logic = Logic(output_func=self.view.append_text, ask_gp_callback=self.view.ask_gp_callback)
         self.files = []  # список для хранения выбранных файлов
@@ -68,4 +66,3 @@ class CalculatorController:
     def handle_reset(self):
         self.files = []
         self.view.reset()
-

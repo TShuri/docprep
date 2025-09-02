@@ -18,10 +18,10 @@ from PyQt6.QtWidgets import (
 
 
 class CalculatorTab(QWidget):
+    files_dropped = pyqtSignal(list)
     select_files_clicked = pyqtSignal()
     calculate_clicked = pyqtSignal()
     reset_clicked = pyqtSignal()
-    files_dropped = pyqtSignal(list)
 
     def __init__(self):
         super().__init__()

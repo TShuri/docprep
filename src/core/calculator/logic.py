@@ -91,7 +91,7 @@ class Logic:
                         break
 
     # --- Преобразование строковых значений в float ---
-    def to_float(sums: list) -> None:
+    def to_float(self, sums: list) -> None:
         sums[:] = [float(x) for x in sums if str(x).strip() != '–']
 
     # --- Вопрос пользователю: учитывать ли госпошлину ---
@@ -101,6 +101,50 @@ class Logic:
             return 'yes' if self.ask_gp_callback(gp_msg) else 'no'
         else:
             return 'no'
+
+    # --- Форматированный вывод титульного листа ---
+    def print_titul_sheet(self, text: str):
+        """
+        Выводит текст в QTextEdit, делая жирным:
+        - всю фразу 'по состоянию на'
+        - слово после фразы
+        - слово перед открывающей скобкой '('
+        """
+        if not text:
+            return
+
+        words = text.split()
+        formatted_parts = []
+
+        i = 0
+        while i < len(words):
+            # Проверка фразы "по состоянию на"
+            if i + 2 < len(words):
+                phrase = f'{words[i].lower()} {words[i + 1].lower()} {words[i + 2].lower()}'
+                if phrase == 'по состоянию на':
+                    # Выделяем саму фразу
+                    formatted_parts.append(f'<b>{words[i]} {words[i + 1]} {words[i + 2]}</b>')
+
+                    # Слово после фразы
+                    if i + 3 < len(words):
+                        formatted_parts.append(f'<b>{words[i + 3]}</b>')
+                        i += 4
+                        continue
+                    else:
+                        i += 3
+                        continue
+
+            # Проверка слова перед '('
+            if '(' in words[i] and i > 0:
+                formatted_parts[-1] = f'<b>{formatted_parts[-1]}</b>'
+
+            # Обычное слово
+            formatted_parts.append(words[i])
+            i += 1
+
+        # Собираем текст обратно
+        formatted_text = ' '.join(formatted_parts)
+        self.output.append(formatted_text)
 
     # --- Основная функция для расчета кредитной карты ---
     def run(self, event=None, files=None):
@@ -366,23 +410,23 @@ class Logic:
                         y = sum(self.temp)
                         if ws['a1'].value == 'Управление администрирования кредитов ЦСКО':
                             self.name_obyz.append(ws['a5'].value[65:81])
-                            self.output(f'{ws["a5"].value}')
+                            self.print_titul_sheet(f'{ws["a5"].value}')
                         elif (
                             ws['a1'].value == 'Управление администрирования кредитов ПЦП МСЦ'
                             or ws['a1'].value == 'Управление администрирования кредитов МСЦ'
                         ):
                             self.name_obyz.append(ws['a5'].value[110:140])
-                            self.output(f'{ws["a5"].value}')
+                            self.print_titul_sheet(f'{ws["a5"].value}')
                         elif ws['g1'].value == 'Подразделение по работе с проблемной задолженностью физических лиц':
                             self.name_obyz.append(ws['a4'].value[110:140])
-                            self.output(f'{ws["a4"].value}')
+                            self.print_titul_sheet(f'{ws["a4"].value}')
                         else:
                             if ws['a1'].value != None:
                                 self.name_obyz.append(ws['a1'].value[186:217])
-                                self.output(f'{ws["a1"].value}')
+                                self.print_titul_sheet(f'{ws["a1"].value}')
                             else:
                                 self.name_obyz.append(ws['a2'].value[:201])
-                                self.output(f'{ws["a2"].value}')
+                                self.print_titul_sheet(f'{ws["a2"].value}')
 
                         self.output(f'\nИтоговая задолженность по обязательству - {y:.2f}')
                         self.output('')
@@ -495,12 +539,6 @@ class Logic:
                         y = sum(set(self.temp))
 
                         self.name_obyz.append(ws['c4'].value)
-
-                        self.output(f'{"-" * 60}')
-                        self.output(ws['a5'].value)
-                        self.output(ws['c5'].value)
-                        self.output(ws['c4'].value)
-
                         self.output(f'\nИтоговая задолженность по обязательству - {y:.2f}')
 
                         self.namesdolgsumm.append(y)
@@ -575,18 +613,18 @@ class Logic:
 
                         if ws['a1'].value == 'Управление администрирования кредитов ЦСКО':
                             self.name_obyz.append(ws['a5'].value[65:81])
-                            self.output(ws['a5'].value)
+                            self.print_titul_sheet(ws['a5'].value)
 
                         elif (
                             ws['a1'].value == 'Управление администрирования кредитов ПЦП МСЦ'
                             or ws['a1'].value == 'Управление администрирования кредитов МСЦ'
                         ):
                             self.name_obyz.append(ws['a5'].value[110:140])
-                            self.output(ws['a5'].value)
+                            self.print_titul_sheet(ws['a5'].value)
 
                         else:
                             self.name_obyz.append(ws['a1'].value[186:217])
-                            self.output(ws['a1'].value)
+                            self.print_titul_sheet(ws['a1'].value)
 
                         self.output(f'\nИтоговая задолженность по обязательству - {y:.2f}')
                         self.output('')
