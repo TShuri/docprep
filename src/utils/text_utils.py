@@ -13,7 +13,7 @@ def sanitize_filename(name: str) -> str:
     if not isinstance(name, str):
         raise TypeError('name должен быть строкой')
 
-    sanitized = name.replace('/', '-')
+    sanitized = name.replace('/', '_')
     return sanitized
 
 
@@ -27,9 +27,10 @@ def get_case_number_from_filename(filename: str) -> str:
     :return: Номер дела или пустая строка, если не найден
     """
     for part in filename.split():
-        if '-' in part and '_' in part:
+        if '-' in part or '_' in part:
             return part
     return ''
+
 
 def get_number_obligation_from_foldername(foldername: str) -> Optional[str]:
     """Извлекает номер обязательства из названия папки обязательства.
@@ -44,8 +45,7 @@ def get_number_obligation_from_foldername(foldername: str) -> Optional[str]:
 
     candidate = parts[-3].strip()
     # Проверка: есть ли хотя бы одна цифра
-    if re.search(r"\d", candidate):
+    if re.search(r'\d', candidate):
         return candidate
 
     return None
-
