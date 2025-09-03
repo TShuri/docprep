@@ -86,6 +86,7 @@ class PackageTab(QWidget):
         # Копирование папок обязательств
         label_copy = QLabel('Объединить содержимое папок всех обязательств в одну папку арбитра')
         self.checkbox_all_in_arbitter = QCheckBox()
+        self.checkbox_all_in_arbitter.setChecked(True)
         grid4.addWidget(label_copy, 2, 0)
         grid4.addWidget(self.checkbox_all_in_arbitter, 2, 1)
 
