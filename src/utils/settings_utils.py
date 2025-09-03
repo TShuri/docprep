@@ -71,6 +71,24 @@ def load_work_directory() -> Path | None:
     return folder_path
 
 
+# Название папки арбитр
+def save_arbitter_name(value: str) -> None:
+    """Сохраняет формат названия папки арбитр"""
+    set_setting('arbitter_folder', value)
+
+
+def load_arbitter_name() -> str | None:
+    """
+    Загружает формат названия папки арбитр из settings.json.
+    Возвращает False, если настройка не существует.
+    """
+    value = get_setting('arbitter_folder')
+    if not value:
+        return None
+
+    return value
+
+
 # Пересохранение РЦИ
 def save_resave_rci(value: bool) -> None:
     """Сохраняет в настройках 'Пересохранение РЦИ после расчета'"""
@@ -87,7 +105,6 @@ def load_resave_rci() -> bool | None:
         return False
 
     return value
-
 
 
 # Показать кнопку Пересохраненить файлы
@@ -112,6 +129,7 @@ def load_show_btn_resave() -> bool | None:
 def save_all_in_arbitter(value: bool) -> None:
     """Сохраняет в настройках Объединить содержимое папок всех обязательств в одну папку"""
     set_setting('all_in_arbitter', value)
+
 
 def load_all_in_arbitter() -> bool | None:
     """

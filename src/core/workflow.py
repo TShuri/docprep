@@ -15,137 +15,122 @@ from src.utils.templates_utils import (
 from src.utils.text_utils import get_case_number_from_filename, get_number_obligation_from_foldername, sanitize_filename
 
 
-def form_package(folder_path: str, save_base_statement=False, all_in_arbitter=False):
+def _get_debtor_info(path_folder: Path) -> tuple[str, str, Path]:
     """
-    Формирование пакета документов по банкротству
-    Архив + Заявление
+    Находит документ РТК и извлекает ФИО должника и номер дела.
+    Возвращает (fio_debtor, case_number, path_doc)
     """
-    folder = Path(folder_path)
-    try:
-        # 1 Найти документ РТК и извлечь данные должника
-        path_doc = file_tools.find_rtk_doc(folder)  # Путь к документу РТК
-        doc = docx_tools.open_docx(path_doc)  # Открытие документа РТК
-        fio_debtor = docx_tools.extract_fio_debtor(doc)  # Извлечение ФИО должника
-        case_number = docx_tools.extract_case_number(doc)  # Извлечение номера дела
+    path_doc = file_tools.find_rtk_doc(path_folder)
+    doc = docx_tools.open_docx(path_doc)
+    fio_debtor = docx_tools.extract_fio_debtor(doc)
+    case_number = docx_tools.extract_case_number(doc)
+    return path_doc, fio_debtor, case_number
 
-        # 2 Разархивировать досье
-        path_archive = file_tools.find_dossier_archive(folder)  # Путь к архиву досье
-        path_extract = folder / fio_debtor  # Папка для распаковки архива досье
-        path_dossier = file_tools.unzip_archive(path_archive, path_extract)  # Распаковка архива досье
-        file_tools.unzip_all_nested_archives(path_dossier)  # Распаковка вложенных архивов в досье
-        file_tools.delete_file(path_archive)  # Удаление архива досье после распаковки
 
-        # 3 Переместить документ РТК в папку досье
-        current_path_doc = file_tools.move_file(path_doc, path_dossier)
+def _extract_dossier(path_folder: Path, path_extract: Path = None) -> Path:
+    """
+    Находит архив досье и распаковывает его.
+    Если задан path_extract, то распакует туда, иначе в папку с '<ФИО> без заявления'.
+    Удаляет исходный архив после распаковки.
+    """
+    path_archive = file_tools.find_dossier_archive(path_folder)
+    case_number = get_case_number_from_filename(str(path_archive.stem))
+    if path_extract:
+        path_dossier = file_tools.unzip_archive(path_archive, path_extract)
+    else:
+        path_extract = path_folder / f'{sanitize_filename(case_number)} без заявления'
+        path_dossier = file_tools.unzip_archive(path_archive, path_extract)
+    file_tools.delete_file(path_archive)
+    return path_dossier, case_number
 
-        # Если выбрано сохранение исходного заявления
-        if save_base_statement:
-            dst_path = current_path_doc.parent / f'Исходное заявление{current_path_doc.suffix}'
-            file_tools.copy_file(current_path_doc, dst_path)
 
-        # 4 Создать папку арбитражного дела
-        name_arbitter = path_dossier / f'{sanitize_filename(case_number)} {fio_debtor}'
-        path_arbitter = file_tools.ensure_folder(name_arbitter)
+def _get_dossier_no_statement(path_folder: Path, fio_debtor: str, case_number: str):
+    """Находит распакованную папку досье по его номеру дела и переименовывает ее"""
+    case_number = sanitize_filename(case_number)
+    path = file_tools.find_dossier_no_statement_folder(path_folder, case_number)
+    new_path = file_tools.rename_folder(path, fio_debtor)
+    return new_path
 
-        # 5 Скопировать папки обязательств в папку арбитражного дела
-        # Исключая папку арбитражного дела, если она уже существует
-        paths_obligations = file_tools.find_folders_obligations(path_dossier)  # Поиск папок обязательств
-        if not all_in_arbitter:
-            for path_oblig in paths_obligations:
-                if path_oblig == path_arbitter:
-                    continue
+
+def _extract_all_nested_archives(path_folder: Path) -> None:
+    """Распаковка вложенных архивов в папке"""
+    file_tools.unzip_all_nested_archives(path_folder)
+
+
+def _move_rtk_doc(path_doc: Path, path_dossier: Path, save_orig=False) -> Path:
+    """Перемещение Заявления в папку"""
+    current_path_doc = file_tools.move_file(path_doc, path_dossier)
+    if save_orig:
+        dst_path = current_path_doc.parent / f'Исходное заявление{current_path_doc.suffix}'
+        file_tools.copy_file(current_path_doc, dst_path)
+    return current_path_doc
+
+
+def _prepare_arbiter_folder(
+    path_dossier: Path, case_number: str, fio_debtor: str, all_in_arb=False, arb_name: str = None
+):
+    """Формирование папки арбитр"""
+    paths_obligations = file_tools.find_folders_obligations(path_dossier)
+    if arb_name == '<Номер дела> <ФИО>':
+        path_arbitter = file_tools.ensure_folder(path_dossier / f'{sanitize_filename(case_number)} {fio_debtor}')
+    elif arb_name == 'Арбитр <ФИО>':
+        path_arbitter = file_tools.ensure_folder(path_dossier / f'Арбитр {fio_debtor}')
+    else:
+        path_arbitter = file_tools.ensure_folder(path_dossier / f'А {fio_debtor}')
+
+    for path_oblig in paths_obligations:
+        if all_in_arb:
+            folder_name = os.path.basename(path_oblig)
+            num_oblig = get_number_obligation_from_foldername(folder_name)
+            if num_oblig:
+                file_tools.copy_contents_with_num(path_oblig, path_arbitter, num_oblig)
+            else:
                 file_tools.copy_folder(path_oblig, path_arbitter)
         else:
-            for path_oblig in paths_obligations:
-                if path_oblig == path_arbitter:
-                    continue
-                folder_name = os.path.basename(path_oblig)
-                num_oblig = get_number_obligation_from_foldername(folder_name)
+            file_tools.copy_folder(path_oblig, path_arbitter)
 
-                if num_oblig:
-                    file_tools.copy_contents_with_num(path_oblig, path_arbitter, num_oblig)
-                else:  # Если номер не найден, копируем папку целиком
-                    file_tools.copy_folder(path_oblig, path_arbitter)
-
-        return current_path_doc, fio_debtor, case_number
-
-    except Exception as e:
-        raise e
+    return path_arbitter
 
 
-def unpack_package_no_statement(folder_path: str):
-    """
-    Распаковка пакета документов по банкротству
-    Архив без Заявления
-    """
-    folder = Path(folder_path)
-    try:
-        # 1 Разархивировать досье
-        path_archive = file_tools.find_dossier_archive(folder)  # Путь к архиву досье
-        case_number = get_case_number_from_filename(str(path_archive))
-        path_extract = folder / f'{sanitize_filename(case_number)} без заявления'  # Папка для распаковки архива досье
-        current_path_dossier = file_tools.unzip_archive(path_archive, path_extract)  # Распаковка архива досье
-        file_tools.unzip_all_nested_archives(current_path_dossier)  # Распаковка вложенных архивов в досье
-        file_tools.delete_file(path_archive)  # Удаление архива досье после распаковки
+# ==== Функции для контроллера ====
+def procces_package(folder_path: str, signa, bank, save_orig=False, all_in_arb=False, arb_name=None):
+    """Распаковка архива досье и обработка заявления"""
+    folder = Path(folder_path)  # Рабочая директория
+    path_doc, fio_debtor, case_number = _get_debtor_info(folder)  # Получение инфо с заявления
 
-        return current_path_dossier, case_number
+    _path_extract = folder / fio_debtor  # Создаём путь для распаковки
+    path_dossier, _case_number = _extract_dossier(folder, _path_extract)  # Получаем путь к распакованному архиву
 
-    except Exception as e:
-        raise e
+    current_path_doc = _move_rtk_doc(path_doc, path_dossier, save_orig)  # Получаем путь к перемещенному заявлению
+    proccess_statement(current_path_doc, bank, signa)  # Обрабатываем заявление
+
+    _extract_all_nested_archives(path_dossier)  # Распаковываем вложенные архивы
+    _prepare_arbiter_folder(path_dossier, case_number, fio_debtor, all_in_arb, arb_name)  # Формируем папку арбитр
+
+    return fio_debtor, case_number
 
 
-def insert_statement(folder_path: str, path_dossier: str, save_base_statement=False, all_in_arbitter=False):
-    """
-    Перемещение заявление в распакованный пакет документов по банкротству
-    Архив без Заявления
-    """
-    folder = Path(folder_path)
-    try:
-        # 1 Найти документ РТК и извлечь данные должника
-        path_doc = file_tools.find_rtk_doc(folder)  # Путь к документу РТК
-        doc = docx_tools.open_docx(path_doc)  # Открытие документа РТК
-        fio_debtor = docx_tools.extract_fio_debtor(doc)  # Извлечение ФИО должника
-        case_number = docx_tools.extract_case_number(doc)  # Извлечение номера дела
+def unpack_package(folder_path: str, save_orig=False):
+    """Распаковка архива досье без заявления"""
+    folder = Path(folder_path)  # Рабочая директория
+    path, case_number = _extract_dossier(folder)  # Распаковываем архив
+    return case_number
 
-        # 2 Переименовывание папки досье
-        path_dossier = file_tools.rename_folder(path_dossier, fio_debtor)
 
-        # 3 Переместить документ РТК в папку досье
-        current_path_doc = file_tools.move_file(path_doc, path_dossier)
+def insert_statement(folder_path: str, signa, bank, save_orig=False, all_in_arb=False, arb_name=None):
+    """Вставка заявления в распакованную папку архива досье без заявления"""
+    folder = Path(folder_path)  # Рабочая директория
+    path_doc, fio_debtor, case_number = _get_debtor_info(folder)  # Получение инфо с заявления
 
-        # Если выбрано сохранение исходного заявления
-        if save_base_statement:
-            dst_path = current_path_doc.parent / f'Исходное заявление{current_path_doc.suffix}'
-            file_tools.copy_file(current_path_doc, dst_path)
+    path_dossier = _get_dossier_no_statement(folder, fio_debtor, case_number)  # Получаем путь к папке досье
 
-        # 4 Создать папку арбитражного дела
-        name_arbitter = path_dossier / f'{sanitize_filename(case_number)} {fio_debtor}'
-        path_arbitter = file_tools.ensure_folder(name_arbitter)
+    current_path_doc = _move_rtk_doc(path_doc, path_dossier, save_orig)  # Получаем путь к перемещенному заявлению
+    proccess_statement(current_path_doc, bank, signa)  # Обрабатываем заявление
 
-        # 5 Скопировать папки обязательств в папку арбитражного дела
-        # Исключая папку арбитражного дела, если она уже существует
-        paths_obligations = file_tools.find_folders_obligations(path_dossier)  # Поиск папок обязательств
-        if not all_in_arbitter:
-            for path_oblig in paths_obligations:
-                if path_oblig == path_arbitter:
-                    continue
-                file_tools.copy_folder(path_oblig, path_arbitter)
-        else:
-            for path_oblig in paths_obligations:
-                if path_oblig == path_arbitter:
-                    continue
-                folder_name = os.path.basename(path_oblig)
-                num_oblig = get_number_obligation_from_foldername(folder_name)
+    _extract_all_nested_archives(path_dossier)  # Распаковываем вложенные архивы
+    _prepare_arbiter_folder(path_dossier, case_number, fio_debtor, all_in_arb, arb_name)  # Формируем папку арбитр
 
-                if num_oblig:
-                    file_tools.copy_contents_with_num(path_oblig, path_arbitter, num_oblig)
-                else:  # Если номер не найден, копируем папку целиком
-                    file_tools.copy_folder(path_oblig, path_arbitter)
-
-        return current_path_doc, fio_debtor, case_number
-
-    except Exception as e:
-        raise e
+    return fio_debtor, case_number
 
 
 def proccess_statement(path_doc: Path, bank, signa):

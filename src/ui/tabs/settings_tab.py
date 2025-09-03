@@ -1,8 +1,10 @@
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QGridLayout,
     QGroupBox,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
@@ -48,19 +50,37 @@ class SettingsTab(QWidget):
         group1.setLayout(grid1)
         main_layout.addWidget(group1)
 
-        # === Группа "Калькулятор" ===
-        group2 = QGroupBox('Калькулятор РЦИ')
+        # === Группа "Пакет документов" ===
+        group2 = QGroupBox('Пакет документов')
         grid2 = QGridLayout()
+        self.group2 = group2
+
+        layout2 = QHBoxLayout()
+        layout2.addWidget(QLabel('Выберите название папки арбитр'))
+
+        self.arbitter_selector = QComboBox()
+        banks = ['<Номер дела> <ФИО>', 'Арбитр <ФИО>', 'А <ФИО>']
+        self.arbitter_selector.addItems(banks)
+        self.arbitter_selector.setCurrentIndex(2)  # по умолчанию выбран первый
+        layout2.addWidget(self.arbitter_selector)
+
+        grid2.addLayout(layout2, 0, 0)
+        group2.setLayout(grid2)
+        main_layout.addWidget(group2)
+
+        # === Группа "Калькулятор" ===
+        group3 = QGroupBox('Калькулятор РЦИ')
+        grid3 = QGridLayout()
 
         # Чекбокс "Автосохранение РЦИ"
         self.checkbox_resave_rci = QCheckBox('Пересохранять файлы РЦИ после расчета')
-        grid2.addWidget(self.checkbox_resave_rci, 0, 0)
+        grid3.addWidget(self.checkbox_resave_rci, 0, 0)
 
         self.checkbox_show_btn_resave = QCheckBox('Показать кнопку Пересохранять файлы')
-        grid2.addWidget(self.checkbox_show_btn_resave, 1, 0)
+        grid3.addWidget(self.checkbox_show_btn_resave, 1, 0)
 
-        group2.setLayout(grid2)
-        main_layout.addWidget(group2)
+        group3.setLayout(grid3)
+        main_layout.addWidget(group3)
 
         # == Кнопка "Перезапустить программу" ==
         self.btn_apply = QPushButton('Перезапустить программу')
