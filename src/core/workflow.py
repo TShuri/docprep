@@ -93,7 +93,15 @@ def _prepare_arbiter_folder(
 
 
 # ==== Функции для контроллера ====
-def procces_package(folder_path: str, signa, bank, save_orig=False, all_in_arb=False, arb_name=None):
+def procces_package(
+    folder_path: str,
+    signa,
+    bank,
+    save_orig=False,
+    all_in_arb=False,
+    arb_name=None,
+    format_header=None,
+):
     """Распаковка архива досье и обработка заявления"""
     folder = Path(folder_path)  # Рабочая директория
     path_doc, fio_debtor, case_number = _get_debtor_info(folder)  # Получение инфо с заявления
@@ -102,7 +110,7 @@ def procces_package(folder_path: str, signa, bank, save_orig=False, all_in_arb=F
     path_dossier, _case_number = _extract_dossier(folder, _path_extract)  # Получаем путь к распакованному архиву
 
     current_path_doc = _move_rtk_doc(path_doc, path_dossier, save_orig)  # Получаем путь к перемещенному заявлению
-    proccess_statement(current_path_doc, bank, signa)  # Обрабатываем заявление
+    proccess_statement(current_path_doc, bank, signa, format_header)  # Обрабатываем заявление
 
     _extract_all_nested_archives(path_dossier)  # Распаковываем вложенные архивы
     _prepare_arbiter_folder(path_dossier, case_number, fio_debtor, all_in_arb, arb_name)  # Формируем папку арбитр
@@ -117,7 +125,15 @@ def unpack_package(folder_path: str, save_orig=False):
     return case_number
 
 
-def insert_statement(folder_path: str, signa, bank, save_orig=False, all_in_arb=False, arb_name=None):
+def insert_statement(
+    folder_path: str,
+    signa,
+    bank,
+    save_orig=False,
+    all_in_arb=False,
+    arb_name=None,
+    format_header=None,
+):
     """Вставка заявления в распакованную папку архива досье без заявления"""
     folder = Path(folder_path)  # Рабочая директория
     path_doc, fio_debtor, case_number = _get_debtor_info(folder)  # Получение инфо с заявления
@@ -125,7 +141,7 @@ def insert_statement(folder_path: str, signa, bank, save_orig=False, all_in_arb=
     path_dossier = _get_dossier_no_statement(folder, fio_debtor, case_number)  # Получаем путь к папке досье
 
     current_path_doc = _move_rtk_doc(path_doc, path_dossier, save_orig)  # Получаем путь к перемещенному заявлению
-    proccess_statement(current_path_doc, bank, signa)  # Обрабатываем заявление
+    proccess_statement(current_path_doc, bank, signa, format_header)  # Обрабатываем заявление
 
     _extract_all_nested_archives(path_dossier)  # Распаковываем вложенные архивы
     _prepare_arbiter_folder(path_dossier, case_number, fio_debtor, all_in_arb, arb_name)  # Формируем папку арбитр
@@ -133,7 +149,7 @@ def insert_statement(folder_path: str, signa, bank, save_orig=False, all_in_arb=
     return fio_debtor, case_number
 
 
-def proccess_statement(path_doc: Path, bank, signa):
+def proccess_statement(path_doc: Path, bank, signa, format_header):
     """Обработка заявления"""
     doc = docx_tools.open_docx(path_doc)
 
@@ -144,6 +160,10 @@ def proccess_statement(path_doc: Path, bank, signa):
         except Exception as e:
             raise RuntimeError(f'Ошибка шага "{step_name}": {e}') from e
             # self.view.append_log(f'{step_name}: ошибка — {e}')
+
+    # === Форматирование шапки ===
+    if format_header:
+        _step('Форматирование шапки', docx_tools.format_header, doc)
 
     # === Обработка Обязательств ===
     # Удаление слов из документа

@@ -13,6 +13,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 
 [tool.ruff]
+line-length = 120
 select = ["E", "F", "W", "I"]  # ошибки, предупреждения, импорты
 fix = true
 show-fixes = true

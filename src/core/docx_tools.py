@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional
 
 from docx import Document
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_PARAGRAPH_ALIGNMENT
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt
@@ -80,6 +80,24 @@ def extract_case_number(doc: Document) -> Optional[str]:
             return match.group(1)
 
     return None
+
+
+def format_header(doc: Document) -> None:
+    """Форматирование шапки документа"""
+    paras = doc.paragraphs
+
+    idx_statement = None
+    for i, para in enumerate(paras):
+        if 'ЗАЯВЛЕНИЕ' == para.text.upper():
+            idx_statement = i
+            break
+
+    if idx_statement is None:
+        return
+
+    for para in paras[2:idx_statement]:  # форматируем абзацы с 3-го до найденного
+        fmt = para.paragraph_format
+        fmt.left_indent = Cm(8)
 
 
 def delete_words_in_obyazatelstvo(doc: Document, targets: list[str]) -> None:
@@ -228,7 +246,7 @@ def insert_gosposhlina(doc: Document, template: Document):
                             # Ищем позицию точки после цифры
                             dot_idx = r_text.find('.')
                             if dot_idx != -1:
-                                r_text = r_text[dot_idx + 1:]  # убираем цифру и точку
+                                r_text = r_text[dot_idx + 1 :]  # убираем цифру и точку
                                 first_run_skipped = True
                             else:
                                 # весь run игнорируем, если точка ещё не найдена
@@ -391,6 +409,7 @@ def get_bank_list(doc: Document) -> list[str]:
                 banks.append(bank_name)
     return banks
 
+
 def insert_signature(doc: Document, signa_path: Path):
     """
     Добавляет подпись в самый последний абзац документа и центрирует её.
@@ -399,10 +418,10 @@ def insert_signature(doc: Document, signa_path: Path):
     :param signa_path: Path - путь к картинке подписи
     :param width_cm: ширина подписи в сантиметрах (по умолчанию 5 см)
     """
-    last_paragraph = doc.paragraphs[-1] # Берём последний абзац
-    last_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER# Центрируем абзац
+    last_paragraph = doc.paragraphs[-1]  # Берём последний абзац
+    last_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER  # Центрируем абзац
 
-    run = last_paragraph.add_run() # Вставляем подпись
+    run = last_paragraph.add_run()  # Вставляем подпись
     run.add_picture(str(signa_path), width=Cm(3))
 
 
@@ -430,15 +449,12 @@ def insert_zalog_contacts(doc: Document, template: Document):
             break
 
 
-# if __name__ == '__main__':
-#     mock_doc = 'mock\заявление на включение требований в РТК_2rsfdofiswdf.docx.docx'
-#     signa_path = 'templates/signa.png'
-#     # temp_add_gp = 'templates/gosposhlina/add_gosposhlina.docx'
-#     save_output_mock = 'mock/output.docx'
-#     try:
-#         doc = open_docx(mock_doc)
-#         # template = open_docx(temp_add_gp)
-#         insert_signature(doc, signa_path)
-#         doc.save(save_output_mock)
-#     except Exception as e:
-#         print(f'Ошибка: {e}')
+if __name__ == '__main__':
+    mock_doc = 'mock/заявление на включение требований в РТК_2rsfdofiswdf.docx.docx'
+    save_output_mock = 'mock/output.docx'
+    try:
+        doc = open_docx(mock_doc)
+        format_header(doc)
+        doc.save(save_output_mock)
+    except Exception as e:
+        print(f'Ошибка: {e}')

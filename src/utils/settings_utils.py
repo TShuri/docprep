@@ -88,6 +88,23 @@ def load_arbitter_name() -> str | None:
 
     return value
 
+# Форматирование шапки документа
+def save_format_header(value: bool) -> None:
+    """Сохраняет в настройках 'Форматирование шапки документа'"""
+    set_setting('format_header', value)
+
+
+def load_format_header() -> bool | None:
+    """
+    Загружает флаг 'Форматирование шапки документа' из settings.json.
+    Возвращает False, если настройка не существует.
+    """
+    value = get_setting('format_header')
+    if not value:
+        return False
+
+    return value
+
 
 # Пересохранение РЦИ
 def save_resave_rci(value: bool) -> None:

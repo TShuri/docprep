@@ -6,10 +6,12 @@ from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
 from src.utils.settings_utils import (
     load_arbitter_name,
+    load_format_header,
     load_resave_rci,
     load_show_btn_resave,
     load_work_directory,
     save_arbitter_name,
+    save_format_header,
     save_resave_rci,
     save_show_btn_resave,
     save_work_directory,
@@ -27,6 +29,7 @@ class SettingsController:
         self.view.browse_clicked.connect(self.handle_browse_work_dir_clicked)
         self.view.save_clicked.connect(self.handle_save_work_dir_clicked)
         self.view.arbitter_selector.currentTextChanged.connect(self.handle_arbitter_changed)
+        self.view.checkbox_format_header.stateChanged.connect(self.handle_format_header_clicked)
         self.view.checkbox_resave_rci.stateChanged.connect(self.handle_resave_rci_clicked)
         self.view.checkbox_show_btn_resave.stateChanged.connect(self.handle_show_btn_resave_clicked)
         self.view.aplly_settings_clicked.connect(self.handle_apply_settings_clicked)
@@ -57,10 +60,20 @@ class SettingsController:
             QMessageBox.warning(self.view, 'Ошибка', 'Поле пути к рабочей директории пустое.')
 
     def handle_arbitter_changed(self, text: str):
+        """Формат названия папки арбитр"""
         save_arbitter_name(text)
         QMessageBox.information(
             self.view, 'Настройки сохранены', 'Чтобы настройка применилась необходимо перезапустить программу'
         )
+
+    def handle_format_header_clicked(self):
+        """Форматировать шапку документа"""
+        value = self.view.checkbox_format_header.isChecked()
+        save_format_header(value)
+        QMessageBox.information(
+            self.view, 'Настройки сохранены', 'Чтобы настройка применилась необходимо перезапустить программу'
+        )
+
 
     def handle_resave_rci_clicked(self):
         """Пересохранять файлы РЦИ"""
@@ -86,6 +99,7 @@ class SettingsController:
         self._load_resave_rci()
         self._load_show_btn_resave()
         self._load_arbitter_name()
+        self._load_format_header()
 
     def _load_work_directory(self) -> str | None:
         folder_path = load_work_directory()
@@ -107,6 +121,13 @@ class SettingsController:
             self.view.arbitter_selector.setCurrentIndex(0)
 
         self.view.arbitter_selector.blockSignals(False)
+
+    def _load_format_header(self):
+        value = load_format_header()
+        if value:
+            self.view.checkbox_format_header.blockSignals(True)
+            self.view.checkbox_format_header.setChecked(value)
+            self.view.checkbox_format_header.blockSignals(False)
 
 
     def _load_resave_rci(self):

@@ -7,7 +7,13 @@ from src.core.workflow import (
     procces_package,
     unpack_package,
 )
-from src.utils.settings_utils import load_all_in_arbitter, load_arbitter_name, load_work_directory, save_all_in_arbitter
+from src.utils.settings_utils import (
+    load_all_in_arbitter,
+    load_arbitter_name,
+    load_format_header,
+    load_work_directory,
+    save_all_in_arbitter,
+)
 from src.utils.templates_utils import load_bank_requisites, load_path_signa
 
 
@@ -28,6 +34,7 @@ class PackageController:
         self._check_signa()
         self.arbitter_name = self._load_arbitter_name()
         self._load_setting_all_in_arbitter()
+        self.format_header = self._load_format_header()
 
     def handle_checkbox_no_statement(self, state):
         enabled = state == 0  # 0 = unchecked, 2 = checked
@@ -69,7 +76,8 @@ class PackageController:
                 bank=selected_bank,
                 save_orig=save_orig,
                 all_in_arb=all_in_arb,
-                arb_name=self.arbitter_name
+                arb_name=self.arbitter_name,
+                format_header=self.format_header,
             )
             self.view.set_current_case(f'{case_number} {fio_debtor}')
             self.view.append_log('Пакет документов сформирован.')
@@ -124,7 +132,8 @@ class PackageController:
                 bank=selected_bank,
                 save_orig=save_orig,
                 all_in_arb=all_in_arb,
-                arb_name=self.arbitter_name
+                arb_name=self.arbitter_name,
+                format_header=self.format_header,
             )
             self.view.set_current_case(f'{case_number} {fio_debtor}')
             self.view.append_log('Пакет документов сформирован.')
@@ -185,6 +194,13 @@ class PackageController:
     def _load_arbitter_name(self):
         value = load_arbitter_name()
         if value:
-           return value
+            return value
+        else:
+            return None
+
+    def _load_format_header(self):
+        value = load_format_header()
+        if value:
+            return value
         else:
             return None
