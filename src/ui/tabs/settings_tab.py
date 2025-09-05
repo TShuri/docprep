@@ -68,19 +68,29 @@ class SettingsTab(QWidget):
         group2.setLayout(grid2)
         main_layout.addWidget(group2)
 
-        # === Группа "Калькулятор" ===
-        group3 = QGroupBox('Калькулятор РЦИ')
+        # === Группа "Заявление" ===
+        group3 = QGroupBox('Заявление')
         grid3 = QGridLayout()
 
-        # Чекбокс "Автосохранение РЦИ"
-        self.checkbox_resave_rci = QCheckBox('Пересохранять файлы РЦИ после расчета')
-        grid3.addWidget(self.checkbox_resave_rci, 0, 0)
-
-        self.checkbox_show_btn_resave = QCheckBox('Показать кнопку Пересохранять файлы')
-        grid3.addWidget(self.checkbox_show_btn_resave, 1, 0)
+        self.checkbox_format_header = QCheckBox('Форматировать отступ шапки документа')
+        grid3.addWidget(self.checkbox_format_header, 0, 0)
 
         group3.setLayout(grid3)
         main_layout.addWidget(group3)
+
+        # === Группа "Калькулятор" ===
+        group4 = QGroupBox('Калькулятор РЦИ')
+        grid4 = QGridLayout()
+
+        # Чекбокс "Автосохранение РЦИ"
+        self.checkbox_resave_rci = QCheckBox('Пересохранять файлы РЦИ после расчета')
+        grid4.addWidget(self.checkbox_resave_rci, 0, 0)
+
+        self.checkbox_show_btn_resave = QCheckBox('Показать кнопку Пересохранять файлы')
+        grid4.addWidget(self.checkbox_show_btn_resave, 1, 0)
+
+        group4.setLayout(grid4)
+        main_layout.addWidget(group4)
 
         # == Кнопка "Перезапустить программу" ==
         self.btn_apply = QPushButton('Перезапустить программу')
